@@ -1,4 +1,12 @@
-import { RespType, RespValue } from "./types";
+import {
+    RespType,
+    RespValue,
+    RespSimpleString,
+    RespSimpleError,
+    RespInteger,
+    RespBulkString,
+    RespArray,
+} from "./types";
 
 export interface ParseResult {
     value?: RespValue, // the parsed value as a RespValue
@@ -56,7 +64,7 @@ export default class RespParser {
         }; // return the result
     }
 
-    private readSimpleString(data: Buffer): RespValue | null {
+    private readSimpleString(data: Buffer): RespSimpleString | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -65,11 +73,11 @@ export default class RespParser {
 
         return {
             type: RespType.SimpleString,
-            value: value.toString()
+            value: value.toString("binary")
         };
     }
 
-    private readSimpleError(data: Buffer): RespValue | null {
+    private readSimpleError(data: Buffer): RespSimpleError | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -78,11 +86,11 @@ export default class RespParser {
 
         return {
             type: RespType.SimpleError,
-            value: value.toString()
+            value: value.toString("binary")
         };
     }
 
-    private readInteger(data: Buffer): RespValue | null {
+    private readInteger(data: Buffer): RespInteger | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -91,11 +99,11 @@ export default class RespParser {
 
         return {
             type: RespType.Integer,
-            value: parseInt(value.toString())
+            value: value.toString("binary")
         };
     }
 
-    private readBulkString(data: Buffer): RespValue | null {
+    private readBulkString(data: Buffer): RespBulkString | null {
         const len = this.readUntil(data, "\r\n");
         
         if (len === null) {
@@ -114,11 +122,11 @@ export default class RespParser {
 
         return {
             type: RespType.BulkString,
-            value
+            value: value.toString("binary")
         };
     }
 
-    private readArray(data: Buffer): RespValue | null {
+    private readArray(data: Buffer): RespArray | null {
         const len = this.readUntil(data, "\r\n");
 
         if (len === null) {
@@ -129,8 +137,8 @@ export default class RespParser {
 
         if (count < 0) {
             return {
-                type: RespType.Null,
-                value: null
+                type: RespType.Array,
+                value: []
             };
         }
 

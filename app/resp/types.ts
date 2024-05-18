@@ -15,72 +15,72 @@ export enum RespType {
     Push
 }
 
-interface RespSimpleString {
+export interface RespSimpleString {
     type: RespType.SimpleString;
     value: string;
 }
 
-interface RespSimpleError {
+export interface RespSimpleError {
     type: RespType.SimpleError;
     value: string;
 }
 
-interface RespInteger {
+export interface RespInteger {
     type: RespType.Integer;
-    value: number;
+    value: string;
 }
 
-interface RespBulkString {
+export interface RespBulkString {
     type: RespType.BulkString;
-    value: Buffer | null; // null represents a null bulk string
+    value: string | null; // null represents a null bulk string
 }
 
-interface RespArray {
+export interface RespArray {
     type: RespType.Array;
     value: RespValue[] | null; // null represents a null array
 }
 
-interface RespNull {
+export interface RespNull {
     type: RespType.Null;
     value: null;
 }
 
-interface RespBoolean {
+export interface RespBoolean {
     type: RespType.Boolean;
-    value: boolean;
+    value: string;
 }
 
-interface RespDouble {
+export interface RespDouble {
     type: RespType.Double;
-    value: number;
+    value: string;
 }
 
-interface RespBigNumber {
+export interface RespBigNumber {
     type: RespType.BigNumber;
     value: string; // Big numbers are typically represented as strings
 }
 
-interface RespBulkError {
+export interface RespBulkError {
     type: RespType.BulkError;
-    value: Buffer | null; // null represents a null bulk error
+    value: string | null; // null represents a null bulk error
 }
 
-interface RespVerbatimString {
+export interface RespVerbatimString {
     type: RespType.VerbatimString;
-    value: Buffer;
+    value: string;
 }
 
-interface RespMap {
+export interface RespMap {
     type: RespType.Map;
-    value: [RespValue, RespValue][] | null; // key-value pairs
+    value: [RespValue, RespValue][]; // key-value pairs
 }
 
-interface RespSet {
+export interface RespSet {
     type: RespType.Set;
-    value: RespValue[] | null; // null represents a null set
+    value: RespValue[]; // null represents a null set
 }
 
-interface RespPush {
+export interface RespPush {
     type: RespType.Push;
     value: RespValue[];
 }

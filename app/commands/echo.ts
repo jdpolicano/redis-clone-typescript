@@ -1,5 +1,5 @@
 import Command from './base';
-import type Connection from '../connection';
+import type { RequestContext } from "../handler";
 import type { RespValue } from '../resp/types';
 
 export interface EchoOptions {
@@ -9,12 +9,12 @@ export interface EchoOptions {
 export default class Echo extends Command {
     private options: EchoOptions;
 
-    constructor(connection: Connection, options: EchoOptions) {
-        super(connection);
+    constructor(ctx: RequestContext, options: EchoOptions) {
+        super(ctx);
         this.options = options;
     }
 
     public execute() {
-        this.connection.writeResp(this.options.msgToEcho);
+        this.ctx.connection.writeResp(this.options.msgToEcho);
     }
 }

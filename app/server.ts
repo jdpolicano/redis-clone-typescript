@@ -1,5 +1,6 @@
 import net from "node:net";
 import Handler from "./handler";
+import Database from "./database";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -20,12 +21,14 @@ export default class Server {
     private host: Host;
     private exitStatus: ExitStatus;
     private error?: Error; 
+    private db: Database;
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
         this.port = options.port ? options.port : 6379;
         this.host = options.host ? options.host : "127.0.0.1";
         this.exitStatus = ExitStatus.None;
+        this.db = new Database();
     }
 
     /**
@@ -36,7 +39,12 @@ export default class Server {
             this.listener.listen({ host: this.host, port: this.port });
 
             this.listener.on("connection", (connection) => {
-                new Handler(connection).handle();
+                const handler = new Handler({
+                    client: connection,
+                    db: this.db
+                });
+
+                handler.handle();
             });
 
 

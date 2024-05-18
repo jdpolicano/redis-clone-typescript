@@ -1,18 +1,18 @@
 import { RespValue, RespType } from "./types";
 
 export default class RespEncoder {
-    static encodeResp(payload: RespValue): Buffer {
+    static encodeResp(payload: RespValue): string {
         switch (payload.type) {
             case RespType.SimpleString: {
-                return this.encodeSimpleString(payload.value);
+                return this.encodeSimpleString(payload.value.toString());
             }
             
             case RespType.SimpleError: {
-                return this.encodeSimpleError(payload.value);
+                return this.encodeSimpleError(payload.value.toString());
             }
             
             case RespType.Integer: {
-                return this.encodeInteger(payload.value);
+                return this.encodeInteger(payload.value.toString());
             }
                 
             case RespType.BulkString: {
@@ -28,31 +28,30 @@ export default class RespEncoder {
         }
     }
 
-    static encodeSimpleString(value: string): Buffer {
-        return Buffer.from(`+${value}\r\n`);
+    static encodeSimpleString(value: string): string {
+        return `+${value}\r\n`;
     }
 
-    static encodeSimpleError(value: string): Buffer {
-        return Buffer.from(`-${value}\r\n`);
+    static encodeSimpleError(value: string): string {
+        return `-${value}\r\n`;
     }
 
-    static encodeInteger(value: number): Buffer {
-        return Buffer.from(`:${value}\r\n`);
+    static encodeInteger(value: string): string {
+        return `:${value}\r\n`;
     }
 
-    static encodeBulkString(value: Buffer | null): Buffer {
+    static encodeBulkString(value: string | null): string {
         if (value === null) {
-            return Buffer.from("$-1\r\n");
-        }
-
-        return Buffer.concat([Buffer.from(`$${value.length}\r\n`), value, Buffer.from("\r\n")]);
+            return "$-1\r\n";
+        }  
+        return `$${value.length}\r\n${value}\r\n`;
     }
 
-    static encodeArray(value: RespValue[] | null): Buffer {
+    static encodeArray(value: RespValue[] | null): string {
         if (value === null) {
-            return Buffer.from("*-1\r\n");
+            return "*-1\r\n";
         }
-        const buffers = value.map((v) => this.encodeResp(v));
-        return Buffer.concat([Buffer.from(`*${buffers.length}\r\n`), ...buffers]);
+        const parts = value.map((v) => this.encodeResp(v));
+        return `*${parts.length}\r\n${parts.join("")}`;
     }
 }

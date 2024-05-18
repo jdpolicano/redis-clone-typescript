@@ -1,33 +1,48 @@
-import net from "node:net";
+import net from "net";
 import Connection from "./connection";
 import {
+    RespBulkString,
     RespType,
     type RespValue
 } from "./resp/types";
-
 import Ping from "./commands/ping";
 import Echo from "./commands/echo";
+import Set from "./commands/set";
+import Get from "./commands/get";
+import Database from "./database";
+
+export interface RequestContext {
+    connection: Connection;
+    db: Database;
+}
+export interface HandlerOptions {
+    client: net.Socket; 
+    db: Database;
+}
 
 export default class Handler {
-    private connection: Connection; // the current connection to the client.
+    private ctx: RequestContext;
 
-    constructor(socket: net.Socket) {
-        this.connection = new Connection(socket);
+    constructor(opts: HandlerOptions) {
+        this.ctx = {
+            connection: new Connection(opts.client),
+            db: opts.db
+        };
     }
 
     public async handle() {
         return new Promise<void>((resolve, reject) => {
-            this.connection.on("message", (message) => {
+            this.ctx.connection.on("message", (message) => {
                 this.handleMessage(message);
             });
 
-            this.connection.on("close", () => {
+            this.ctx.connection.on("close", () => {
+                console.log("connection closed");
                 resolve();
             });
 
-            this.connection.on("error", (e) => {
+            this.ctx.connection.on("error", (e) => {
                 console.error(e);
-                this.connection.writeString("OK");
                 reject();
             });
         });
@@ -35,7 +50,7 @@ export default class Handler {
 
     private async handleMessage(message: RespValue) {
         if (message.type !== RespType.Array || !message.value) {
-            this.connection.writeString("ERR expected array of arguments");
+            this.ctx.connection.writeString("ERR expected array of arguments");
             return;
         }
 
@@ -45,41 +60,69 @@ export default class Handler {
     // generic K is a type that extends base from ../commands/base
     private execCommand(args: RespValue[]) {
         if (!this.validateArgs(args)) {
-            this.connection.writeString("ERR expected array of bulk strings");
+            this.ctx.connection.writeString("ERR expected array of bulk strings");
             return;
         }
 
         const commandName = args[0].value;
 
         if (!commandName) {
-            this.connection.writeString("ERR expected command name");
+            this.ctx.connection.writeString("ERR expected command name");
             return;
         }
 
         switch (commandName.toString().toLowerCase()) {
             case "ping":
-                return this.execPing(args.slice(1));
+                return this.execPing(args.slice(1) as RespBulkString[]);
             case "echo":
-                return this.execEcho(args.slice(1));
+                return this.execEcho(args.slice(1) as RespBulkString[]);
+            case "set":
+                return this.execSet(args.slice(1) as RespBulkString[]);
+            case "get":
+                return this.execGet(args.slice(1) as RespBulkString[]);
             default:
-                this.connection.writeString("ERR unknown command");
+                this.ctx.connection.writeString("ERR unknown command");
                 return;
         }
     }
 
-    private execPing(args: RespValue[]) {
-        const command = new Ping(this.connection);
+    private execPing(args: RespBulkString[]) {
+        const command = new Ping(this.ctx);
         command.execute();
     }
 
-    private execEcho(args: RespValue[]) {
-        console.log(args);
-        const command = new Echo(this.connection, { msgToEcho: args[0] });
+    private execEcho(args: RespBulkString[]) {
+        if (args.length === 0) {
+            this.ctx.connection.writeString("ERR expected at least one argument");
+            return;
+        }
+        const command = new Echo(this.ctx, { msgToEcho: args[0] });
+        command.execute();
+    }
+
+    private execSet(args: RespBulkString[]) { 
+        if (args.length !== 2) {
+            this.ctx.connection.writeString("ERR expected 2 arguments");
+            return;
+        }
+        
+        const command = new Set(this.ctx, { key: args[0], value: args[1] });
+        command.execute();
+    }
+
+    private execGet(args: RespBulkString[]) {
+        if (args.length !== 1) {
+            this.ctx.connection.writeString("ERR expected 1 argument");
+            return;
+        }
+        
+        const command = new Get(this.ctx, { key: args[0] });
         command.execute();
     }
 
     private validateArgs(args: RespValue[]): boolean {
         return args.length > 0
+            // type narrow down to RespBulkString
             && args.every((arg) => arg.type === RespType.BulkString)
             && args[0].value !== undefined
             && args[0].value !== null;

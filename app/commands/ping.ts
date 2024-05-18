@@ -1,13 +1,13 @@
 import Command from './base';
-import type Connection from '../connection';
+import type { RequestContext } from '../handler';
 import type { RespValue } from '../resp/types';
 
 export default class Ping extends Command {
-    constructor(connection: Connection) {
-        super(connection);
+    constructor(ctx: RequestContext) {
+        super(ctx);
     }
 
     public execute() {
-        this.connection.writeString("PONG");
+        this.ctx.connection.writeString("PONG");
     }
 }
