@@ -7,7 +7,7 @@ import {
 } from "./resp/types";
 import Ping from "./commands/ping";
 import Echo from "./commands/echo";
-import Set from "./commands/set";
+import Set, { SetOptions } from "./commands/set";
 import Get from "./commands/get";
 import Database from "./database";
 
@@ -101,13 +101,39 @@ export default class Handler {
     }
 
     private execSet(args: RespBulkString[]) { 
-        if (args.length !== 2) {
+        if (args.length < 2) {
             this.ctx.connection.writeString("ERR expected 2 arguments");
             return;
         }
         
-        const command = new Set(this.ctx, { key: args[0], value: args[1] });
+        const options = this.parseSetOptions(args);
+
+        const command = new Set(this.ctx, options);
         command.execute();
+    }
+
+    private parseSetOptions(args: RespBulkString[]): SetOptions {
+        const options: SetOptions = {
+            key: args[0],
+            value: args[1]
+        };
+
+        for (let i = 2; i < args.length; i += 2) {
+            const flag = args[i].value?.toString().toLowerCase();
+            const value = args[i + 1].value;
+
+            if (value === undefined || value === null) {
+                return options;
+            }
+
+            if (flag === "px") {
+                options.px = parseInt(value.toString());
+            } else if (flag === "ex") {
+                options.ex = parseInt(value.toString());
+            }
+        }
+
+        return options;
     }
 
     private execGet(args: RespBulkString[]) {

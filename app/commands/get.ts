@@ -18,9 +18,9 @@ export default class Get extends Command {
     public execute(): void {
         const key = this.ctx.db.get(this.options.key);
         if (key) {
-            this.ctx.connection.writeResp(key);
+            this.ctx.connection.writeResp(key.value);
         } else {
-            this.ctx.connection.writeResp({ type:RespType.BulkString, value: null })
+            this.ctx.connection.writeResp({ type: RespType.BulkString, value: null })
         }
     }
 }
