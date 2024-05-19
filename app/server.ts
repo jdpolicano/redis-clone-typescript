@@ -13,6 +13,7 @@ export enum ExitStatus {
 
 export interface ServerOptions {
     port?: string,
+    replicaof?: string
 }
 
 export default class Server {
@@ -22,22 +23,26 @@ export default class Server {
     private exitStatus: ExitStatus;
     private error?: Error; 
     private db: Database;
+    private options: ServerOptions;
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
         this.port = options.port ? options.port : "6379";
         this.exitStatus = ExitStatus.None;
         this.db = new Database();
+        this.options = options;
     }
 
     /**
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
     public start(): Promise<void> {
-        const serverInfo = ServerInfo.getInstance("master");
+        const serverInfo = this.options.replicaof
+            ? ServerInfo.getInstance("replica")
+            : ServerInfo.getInstance("master");
 
         return new Promise((resolve, reject) => {
-            this.listener.listen({ host: this.host, port: parseInt(this.port) });
+            this.listener.listen({ port: parseInt(this.port) });
 
             this.listener.on("connection", (connection) => {
                 const handler = new Handler({

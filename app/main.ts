@@ -11,6 +11,10 @@ const args = util.parseArgs({
             type: "string",
             short: "p",
             default: "6379"
+        },
+
+        replicaof: {
+            type: "string"
         }
     },
     allowPositionals: true
