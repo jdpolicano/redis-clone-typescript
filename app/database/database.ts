@@ -1,4 +1,4 @@
-import type { RespBulkString } from "./resp/types";
+import type { RespBulkString } from "../resp/types";
 import Expiration, { type Metric } from "./expiration";
 
 export interface DbEntry {
@@ -23,7 +23,6 @@ export default class Database {
     public get(key: RespBulkString): DbEntry | undefined {
         const dbEntry = this.data.get(key.value);
         if (dbEntry && dbEntry.expiration) {
-            console.log(dbEntry.expiration);
             if (dbEntry.expiration.isExpired()) {
                 this.data.delete(key.value);
                 return;

@@ -9,7 +9,7 @@ import Ping from "./commands/ping";
 import Echo from "./commands/echo";
 import Set, { SetOptions } from "./commands/set";
 import Get from "./commands/get";
-import Database from "./database";
+import Database from "./database/database";
 
 export interface RequestContext {
     connection: Connection;

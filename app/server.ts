@@ -1,6 +1,6 @@
 import net from "node:net";
 import Handler from "./handler";
-import Database from "./database";
+import Database from "./database/database";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -11,13 +11,12 @@ export enum ExitStatus {
 } 
 
 export interface ServerOptions {
-    port?: number,
-    host?: Host
+    port?: string,
 }
 
 export default class Server {
     private listener: net.Server;
-    private port: number;
+    private port: string;
     private host: Host;
     private exitStatus: ExitStatus;
     private error?: Error; 
@@ -25,8 +24,7 @@ export default class Server {
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
-        this.port = options.port ? options.port : 6379;
-        this.host = options.host ? options.host : "127.0.0.1";
+        this.port = options.port ? options.port : "6379";
         this.exitStatus = ExitStatus.None;
         this.db = new Database();
     }
@@ -36,7 +34,7 @@ export default class Server {
      */
     public start(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.listener.listen({ host: this.host, port: this.port });
+            this.listener.listen({ host: this.host, port: parseInt(this.port) });
 
             this.listener.on("connection", (connection) => {
                 const handler = new Handler({

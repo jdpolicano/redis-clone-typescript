@@ -1,7 +1,7 @@
 import Command from './base';
 import type { RequestContext } from "../handler";
 import type { RespBulkString } from '../resp/types';
-import Expiration, { type Metric}  from '../expiration';
+import Expiration, { type Metric}  from '../database/expiration';
 
 export interface SetOptions {
     key: RespBulkString;
