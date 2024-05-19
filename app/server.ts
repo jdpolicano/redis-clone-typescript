@@ -11,6 +11,7 @@ export enum ExitStatus {
     None // the server is ongoing
 } 
 
+// options
 export interface ServerOptions {
     port?: string,
     replicaof?: string
