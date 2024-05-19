@@ -28,7 +28,7 @@ export default class ServerInfo {
         if (role === "master") {
             return {
                 role,
-                masterReplid: "some random hash string.",
+                masterReplid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", // this will eventually be rand gen.
                 masterReplOffset: 0
             }
         } else {
@@ -54,5 +54,13 @@ export default class ServerInfo {
 
     public getRole(): Role {
         return this.replication.role; 
+    }
+
+    public getMasterReplid(): string {
+        return this.replication.masterReplid
+    }
+
+    public getMasterReplOffset(): number {
+        return this.replication.masterReplOffset
     }
 }

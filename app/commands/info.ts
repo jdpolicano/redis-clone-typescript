@@ -1,5 +1,6 @@
 import Command from './base';
 import type { RequestContext } from "../handler";
+import { RespType } from '../resp/types';
 
 
 export default class Info extends Command {
@@ -8,10 +9,15 @@ export default class Info extends Command {
     }
 
     public execute() {
-        this.ctx.connection.writeString(this.formatInfo());
+        this.ctx.connection.writeResp({ type: RespType.BulkString, value: this.formatInfo()});
     }
     
     private formatInfo(): string {
-        return `role:${this.ctx.info.getRole()}\r\n`;
+        const parts = [
+            `role:${this.ctx.info.getRole()}`,
+            `master_replid:${this.ctx.info.getMasterReplid()}`,
+            `master_repl_offset:${this.ctx.info.getMasterReplOffset()}`
+        ]
+        return parts.join("\r\n");
     }
 }
