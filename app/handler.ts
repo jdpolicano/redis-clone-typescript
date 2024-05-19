@@ -9,15 +9,20 @@ import Ping from "./commands/ping";
 import Echo from "./commands/echo";
 import Set, { SetOptions } from "./commands/set";
 import Get from "./commands/get";
+import Info from "./commands/info"; // info command
 import Database from "./database/database";
+import type ServerInfo from "./serverInfo"; // server info meta data...
 
 export interface RequestContext {
     connection: Connection;
     db: Database;
+    info: ServerInfo;
 }
+
 export interface HandlerOptions {
     client: net.Socket; 
     db: Database;
+    info: ServerInfo
 }
 
 export default class Handler {
@@ -26,7 +31,8 @@ export default class Handler {
     constructor(opts: HandlerOptions) {
         this.ctx = {
             connection: new Connection(opts.client),
-            db: opts.db
+            db: opts.db,
+            info: opts.info
         };
     }
 
@@ -80,6 +86,8 @@ export default class Handler {
                 return this.execSet(args.slice(1) as RespBulkString[]);
             case "get":
                 return this.execGet(args.slice(1) as RespBulkString[]);
+            case "info":
+                return this.execInfo(args.slice(1) as RespBulkString[]);
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -112,6 +120,10 @@ export default class Handler {
         command.execute();
     }
 
+    private execInfo(args: RespBulkString[]) {
+        const command = new Info(this.ctx);
+        command.execute();
+    }
     private parseSetOptions(args: RespBulkString[]): SetOptions {
         const options: SetOptions = {
             key: args[0],

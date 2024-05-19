@@ -1,6 +1,7 @@
 import net from "node:net";
 import Handler from "./handler";
 import Database from "./database/database";
+import ServerInfo from "./serverInfo";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -33,13 +34,16 @@ export default class Server {
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
     public start(): Promise<void> {
+        const serverInfo = ServerInfo.getInstance("master");
+
         return new Promise((resolve, reject) => {
             this.listener.listen({ host: this.host, port: parseInt(this.port) });
 
             this.listener.on("connection", (connection) => {
                 const handler = new Handler({
                     client: connection,
-                    db: this.db
+                    db: this.db,
+                    info: serverInfo
                 });
 
                 handler.handle();
