@@ -1,4 +1,4 @@
-export type Role = "master" | "replica";
+export type Role = "master" | "slave";
 
 export interface ReplicationInfo {
     role: Role,

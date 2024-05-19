@@ -38,7 +38,7 @@ export default class Server {
      */
     public start(): Promise<void> {
         const serverInfo = this.options.replicaof
-            ? ServerInfo.getInstance("replica")
+            ? ServerInfo.getInstance("slave")
             : ServerInfo.getInstance("master");
 
         return new Promise((resolve, reject) => {
