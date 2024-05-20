@@ -24,6 +24,7 @@ export default class ReplicationHandler extends SocketHandler {
         await this.ping();
         await this.notifyListeningPort();
         await this.notifyCapabilities();
+        await this.psync();
         console.log("Replication session started.")
     }
 
@@ -42,8 +43,6 @@ export default class ReplicationHandler extends SocketHandler {
             type: RespType.SimpleString,
             value: "PONG"
         });
-
-        this.setState(ReplicationState.ServerAlive)
     }
 
     private async notifyListeningPort() {
@@ -79,6 +78,17 @@ export default class ReplicationHandler extends SocketHandler {
         this.expect(response, {
             type: RespType.SimpleString,
             value: "OK"
+        });
+    }
+
+    private async psync() {
+        this.ctx.connection.writeResp({
+            type: RespType.Array,
+            value: [
+                { type: RespType.BulkString, value: "PSYNC" },
+                { type: RespType.BulkString, value: this.ctx.info.getMasterReplid() },
+                { type: RespType.BulkString, value: this.ctx.info.getMasterReplOffset().toString() }
+            ]
         });
     }
 
