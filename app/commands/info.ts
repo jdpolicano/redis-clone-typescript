@@ -1,6 +1,5 @@
-import Command from './base';
-import type { RequestContext } from "../handler";
-import { RespType } from '../resp/types';
+import Command, { TransactionType } from './base';
+import type { RequestContext } from "../protocol/base";
 
 
 export default class Info extends Command {
@@ -9,7 +8,7 @@ export default class Info extends Command {
     }
 
     public execute() {
-        this.ctx.connection.writeResp({ type: RespType.BulkString, value: this.formatInfo()});
+        return this.transaction(TransactionType.Other, this.bulkString(this.formatInfo()));
     }
     
     private formatInfo(): string {

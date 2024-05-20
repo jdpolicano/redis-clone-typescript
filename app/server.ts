@@ -1,14 +1,15 @@
 import net from "node:net";
-import Handler from "./handler";
+import Handler from "./protocol/handler";
+import ReplicationHandler from "./protocol/replication";
 import Database from "./database/database";
 import ServerInfo from "./serverInfo";
+import type { ServerInfoOptions } from "./serverInfo";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
 export enum ExitStatus {
-    Error, // the server is exiting with an error
     Graceful, // the server exited gracefully
-    None // the server is ongoing
+    Error, // the server is exiting with an error
 } 
 
 // options
@@ -24,41 +25,50 @@ export default class Server {
     private exitStatus: ExitStatus;
     private error?: Error; 
     private db: Database;
-    private options: ServerOptions;
+    private serverInfo: ServerInfo;
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
         this.port = options.port ? options.port : "6379";
-        this.exitStatus = ExitStatus.None;
+        this.exitStatus = ExitStatus.Graceful
         this.db = new Database();
-        this.options = options;
+        this.setupServerInfo(options);
     }
 
     /**
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
     public start(): Promise<void> {
-        const serverInfo = this.options.replicaof
-            ? ServerInfo.getInstance("slave")
-            : ServerInfo.getInstance("master");
+        if (this.serverInfo.getRole() === "master") {
+            return this.listen();
+        } else {
+            return this.negotiateReplication()
+        }
+    }
 
+    private listen(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.listener.listen({ port: parseInt(this.port) });
-
+      
             this.listener.on("connection", (connection) => {
                 const handler = new Handler({
-                    client: connection,
+                    connection,
                     db: this.db,
-                    info: serverInfo
+                    info: this.serverInfo
                 });
 
                 handler.handle();
             });
 
 
-            this.listener.on("error", (e) => {
+            this.listener.on("error", (e: NodeJS.ErrnoException) => {
                 this.error = e;
                 this.exitStatus = ExitStatus.Error;
+
+                if (e.code === 'EADDRINUSE' || e.code === 'EACCES') {
+                    this.printErr();
+                }
+
                 this.listener.close();
             });
 
@@ -66,18 +76,68 @@ export default class Server {
                 if (this.exitStatus === ExitStatus.Error) {
                     this.printErr();
                     return reject();
-                } 
+                }
+                console.log("Server closed")
                 resolve();
-            })
+            });
+
+            this.listener.on("listening", () => {
+                console.log(`Server listening on port ${this.getServerPort()}`);
+            });
             
         })
+    }
+
+    private negotiateReplication(): Promise<void> {
+        const [host, port] = this.serverInfo.getMasterAddressParts();
+        // connect to the master and send a ping request.
+        const socket = net.createConnection({
+            host,
+            port: parseInt(port)
+        });
+
+        const replicationHandler = new ReplicationHandler({
+            connection: socket,
+            db: this.db,
+            info: this.serverInfo
+        }); 
+
+        return replicationHandler.handle();
+    }
+
+    private setupServerInfo(options: ServerOptions) {
+        if (options.replicaof) {
+            const [host, port] = options.replicaof.split(" ");
+
+            if (!host || !port) {
+                throw new Error('[ERR] replicaof of option requires "[host] [port]" format');
+            }
+
+            const infoOpts: ServerInfoOptions = {
+                role: "slave",
+                host,
+                port,
+            }
+
+            this.serverInfo = ServerInfo.getInstance(infoOpts);
+
+        } else {
+            const infoOpts: ServerInfoOptions = {
+                role: "master",
+                host: this.host,
+                port: this.port,
+            }
+             
+            this.serverInfo = ServerInfo.getInstance(infoOpts);
+        }
+
     }
 
     /**
      * @returns the address of the server as a full string.
      */
-    getServerAddress(): string {
-        return `${this.host}:${this.port}`;
+    getServerPort(): string {
+        return this.port;
     }
 
     /**

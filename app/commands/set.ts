@@ -1,7 +1,7 @@
-import Command from './base';
-import type { RequestContext } from "../handler";
+import Command, { TransactionType, Transaction } from './base';
+import type { RequestContext } from "../protocol/base";
 import type { RespBulkString } from '../resp/types';
-import Expiration, { type Metric}  from '../database/expiration';
+import Expiration from "../database/expiration";
 
 export interface SetOptions {
     key: RespBulkString;
@@ -20,7 +20,7 @@ export default class Set extends Command {
         this.options = options;
     }
 
-    public execute(): void {
+    public execute(): Transaction {
         let expiry: Expiration | undefined;
 
         if (this.options.ex) {
@@ -32,6 +32,6 @@ export default class Set extends Command {
         }
 
         this.ctx.db.set(this.options.key, this.options.value, expiry);
-        this.ctx.connection.writeString("OK");
+        return this.transaction(TransactionType.Write, this.simpleString("OK"));
     }
 }

@@ -16,18 +16,25 @@ import type { RespValue } from "./resp/types";
 interface ConnectionEvents {
     message: (data: RespValue) => void;
     error: (error: Error) => void;
+    rawMessage: (data: Buffer) => void;
     close: () => void;
     // Add more events as needed
 }
 
 export default class Connection extends EventEmitter {
     private socket: net.Socket;
-    private buffer: Buffer; 
+    private buffer: Buffer;
+    /**
+     * A boolean indicating whether the connection should translate the incoming data to a RespValue.
+     * If  `false`, the connection will emit the raw buffer data to a separate event "rawMessage"
+     */
+    private shouldTranslate: boolean;
 
     constructor(socket: net.Socket) {
         super();
         this.socket = socket; 
         this.buffer = Buffer.alloc(0);
+        this.shouldTranslate = true;
         this.wireSocket(); // wire the sockets events to this instance. 
     }
 
@@ -53,8 +60,26 @@ export default class Connection extends EventEmitter {
         this.socket.write(RespEncoder.encodeResp(data));
     }
 
+    public setRawMode() {
+        this.shouldTranslate = false;
+    }
+
+    public setRespMode() {
+        this.shouldTranslate = true;
+    }
+
+    public isRawMode() {
+        return !this.shouldTranslate;
+    }
+
     private wireSocket() {
         this.socket.on("data", (data) => {
+            if (!this.shouldTranslate) {
+                this.emit("rawMessage", Buffer.concat([this.buffer, data]));
+                this.buffer = Buffer.alloc(0);
+                return;
+            };
+
             this.buffer = Buffer.concat([this.buffer, data]);
             const parser = new RespParser();
             
