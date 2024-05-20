@@ -38,11 +38,12 @@ export default class Server {
     /**
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
-    public start(): Promise<void> {
+    public async start(): Promise<void> {
         if (this.serverInfo.getRole() === "master") {
             return this.listen();
         } else {
-            return this.negotiateReplication()
+            await this.negotiateReplication();
+            return this.listen();
         }
     }
 
