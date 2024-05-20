@@ -22,6 +22,8 @@ export default class ReplicationHandler extends SocketHandler {
 
     async handle() {
         await this.ping();
+        await this.notifyListeningPort();
+        await this.notifyCapabilities();
         console.log("Replication session started.")
     }
 
