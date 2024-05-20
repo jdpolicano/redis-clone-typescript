@@ -18,7 +18,7 @@ export interface ServerInfoOptions {
         host: string,
         port: string,
     },
-    config?: {
+    config: {
         port: string
     }
 }
@@ -42,6 +42,12 @@ export default class ServerInfo {
         return ServerInfo.instance;
     }
 
+
+    private setup(opts: ServerInfoOptions) {
+        this.replication = this.getDefaultReplicationInfo(opts);
+        this.serverConfig = this.getServerConfig(opts);
+    }
+
     private getDefaultReplicationInfo(opts: ServerInfoOptions): ReplicationInfo {
         if (opts.replication.role === "master") {
             return {
@@ -62,8 +68,8 @@ export default class ServerInfo {
         }
     }
 
-    private setup(opts: ServerInfoOptions) {
-        this.replication = this.getDefaultReplicationInfo(opts);
+    private getServerConfig(opts: ServerInfoOptions) {
+        return opts.config; 
     }
 
     public setMasterReplid(id: string) {
