@@ -44,6 +44,42 @@ export default class ReplicationHandler extends SocketHandler {
         this.setState(ReplicationState.ServerAlive)
     }
 
+    private async notifyListeningPort() {
+        this.ctx.connection.writeResp({
+            type: RespType.Array,
+            value: [
+                { type: RespType.BulkString, value: "REPLCONF" },
+                { type: RespType.BulkString, value: "listening-port" },
+                { type: RespType.BulkString, value: this.ctx.info.getPort() }
+            ]
+        });
+
+        const response = await this.ctx.connection.readMessage();
+
+        this.expect(response, {
+            type: RespType.SimpleString,
+            value: "OK"
+        });
+    }
+
+    public async notifyCapabilities() {
+        this.ctx.connection.writeResp({
+            type: RespType.Array,
+            value: [
+                { type: RespType.BulkString, value: "REPLCONF" },
+                { type: RespType.BulkString, value: "capa" },
+                { type: RespType.BulkString, value: "psync2" }
+            ]
+        });
+
+        const response = await this.ctx.connection.readMessage();
+
+        this.expect(response, {
+            type: RespType.SimpleString,
+            value: "OK"
+        });
+    }
+
     private expect(received: RespValue, expected: RespValue) {
         if (expected.value !== received.value) {
             throw new Error(`Expected ${expected.value} but got ${received.value}`);

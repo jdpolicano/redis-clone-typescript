@@ -8,21 +8,31 @@ export interface ReplicationInfo {
     masterPort: string,
 }
 
-export interface ServerInfoOptions {
-    host: string,
+export interface ServerConfig {
     port: string,
-    role: Role
+}
+
+export interface ServerInfoOptions {
+    replication: {
+        role: Role
+        host: string,
+        port: string,
+    },
+    config?: {
+        port: string
+    }
 }
 
 export default class ServerInfo {
     private replication: ReplicationInfo;
+    private serverConfig: ServerConfig;
     static instance?: ServerInfo;
     
     private constructor() { }
     
     public static getInstance(opts: ServerInfoOptions): ServerInfo {
         if (ServerInfo.instance) {
-            if (opts.role !== ServerInfo.instance.getRole()) {
+            if (opts.replication.role !== ServerInfo.instance.getRole()) {
                 throw new Error("Instance role no longer matches original state, did you mean to call setRole()?");
             }
             return ServerInfo.instance
@@ -33,21 +43,21 @@ export default class ServerInfo {
     }
 
     private getDefaultReplicationInfo(opts: ServerInfoOptions): ReplicationInfo {
-        if (opts.role === "master") {
+        if (opts.replication.role === "master") {
             return {
-                role: opts.role,
+                role: opts.replication.role,
                 masterReplid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", // this will eventually be rand gen.
                 masterReplOffset: 0,
-                masterHost: opts.host,
-                masterPort: opts.port,
+                masterHost: opts.replication.host,
+                masterPort: opts.replication.port,
             }
         } else {
             return {
-                role: opts.role,
+                role: opts.replication.role,
                 masterReplid: "?",
                 masterReplOffset: -1,
-                masterHost: opts.host,
-                masterPort: opts.port,
+                masterHost: opts.replication.host,
+                masterPort: opts.replication.port,
             }
         }
     }
@@ -82,5 +92,9 @@ export default class ServerInfo {
 
     public getMasterAddressParts(): [string, string] {
         return [this.replication.masterHost, this.replication.masterPort];
+    }
+
+    public getPort(): string {
+        return this.serverConfig.port;
     }
 }

@@ -29,6 +29,7 @@ export default class Server {
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
+        this.host = "127.0.0.1";
         this.port = options.port ? options.port : "6379";
         this.exitStatus = ExitStatus.Graceful
         this.db = new Database();
@@ -115,18 +116,30 @@ export default class Server {
             }
 
             const infoOpts: ServerInfoOptions = {
-                role: "slave",
-                host,
-                port,
+                replication: {
+                    role: "slave",
+                    host,
+                    port,
+                },
+
+                config: {
+                    port: this.port
+                }
             }
 
             this.serverInfo = ServerInfo.getInstance(infoOpts);
 
         } else {
             const infoOpts: ServerInfoOptions = {
-                role: "master",
-                host: this.host,
-                port: this.port,
+                replication: {
+                    role: "master",
+                    host: this.host,
+                    port: this.port,
+                },
+
+                config: {
+                    port: this.port
+                }
             }
              
             this.serverInfo = ServerInfo.getInstance(infoOpts);

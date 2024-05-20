@@ -32,7 +32,6 @@ export default class Handler extends SocketHandler {
         while (true) {
             try {
                 const message = await this.ctx.connection.readMessage();
-                console.log(JSON.stringify(message));
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {
