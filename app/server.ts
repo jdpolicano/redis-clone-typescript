@@ -3,7 +3,7 @@ import Handler from "./protocol/handler";
 import ReplicationHandler from "./protocol/replication";
 import Database from "./database/database";
 import ServerInfo from "./serverInfo";
-import type { ServerInfoOptions } from "./serverInfo";
+import ClientInfo from "./clientInfo";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -53,10 +53,13 @@ export default class Server {
             this.listener.listen({ port: parseInt(this.port) });
       
             this.listener.on("connection", (connection) => {
+                // will be used to keep track of replicas...
+                const clientInfo = new ClientInfo();
                 const handler = new Handler({
                     connection,
                     db: this.db,
-                    info: this.serverInfo
+                    serverInfo: this.serverInfo,
+                    clientInfo
                 });
 
                 handler.handle();
@@ -101,7 +104,8 @@ export default class Server {
         const replicationHandler = new ReplicationHandler({
             connection: socket,
             db: this.db,
-            info: this.serverInfo
+            serverInfo: this.serverInfo,
+            clientInfo: new ClientInfo()
         }); 
 
         return replicationHandler.handle();
@@ -115,22 +119,20 @@ export default class Server {
                 throw new Error('[ERR] replicaof of option requires "[host] [port]" format');
             }
 
-            const infoOpts: ServerInfoOptions = {
+            this.serverInfo = ServerInfo.getInstance({
                 replication: {
                     role: "slave",
-                    host,
-                    port,
+                    host: host,
+                    port: port,
                 },
 
                 config: {
                     port: this.port
                 }
-            }
-
-            this.serverInfo = ServerInfo.getInstance(infoOpts);
+            });
 
         } else {
-            const infoOpts: ServerInfoOptions = {
+            this.serverInfo = ServerInfo.getInstance({
                 replication: {
                     role: "master",
                     host: this.host,
@@ -140,9 +142,8 @@ export default class Server {
                 config: {
                     port: this.port
                 }
-            }
-             
-            this.serverInfo = ServerInfo.getInstance(infoOpts);
+            
+            });
         }
 
     }

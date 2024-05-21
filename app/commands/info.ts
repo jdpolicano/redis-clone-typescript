@@ -1,5 +1,6 @@
 import Command, { TransactionType } from './base';
 import type { RequestContext } from "../protocol/base";
+import RespBuilder from '../resp/builder';
 
 
 export default class Info extends Command {
@@ -8,14 +9,14 @@ export default class Info extends Command {
     }
 
     public execute() {
-        return this.transaction(TransactionType.Other, this.bulkString(this.formatInfo()));
+        return this.transaction(TransactionType.Other, RespBuilder.bulkString(this.formatInfo()));
     }
     
     private formatInfo(): string {
         const parts = [
-            `role:${this.ctx.info.getRole()}`,
-            `master_replid:${this.ctx.info.getMasterReplid()}`,
-            `master_repl_offset:${this.ctx.info.getMasterReplOffset()}`
+            `role:${this.ctx.serverInfo.getRole()}`,
+            `master_replid:${this.ctx.serverInfo.getMasterReplid()}`,
+            `master_repl_offset:${this.ctx.serverInfo.getMasterReplOffset()}`
         ]
         return parts.join("\r\n");
     }

@@ -1,7 +1,7 @@
 import Command, { Transaction, TransactionType } from './base';
 import type { RequestContext } from "../protocol/base";
 import type { RespBulkString } from '../resp/types';
-import { RespType } from '../resp/types';
+import RespBuilder from '../resp/builder';
 
 export interface GetOptions {
     key: RespBulkString;
@@ -20,7 +20,7 @@ export default class Get extends Command {
         if (key) {
             return this.transaction(TransactionType.Read, key.value)
         } else {
-            return this.transaction(TransactionType.ReadFail, this.bulkString(null))
+            return this.transaction(TransactionType.ReadFail, RespBuilder.bulkString(null))
         }
     }
 }

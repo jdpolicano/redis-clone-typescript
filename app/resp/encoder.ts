@@ -4,15 +4,15 @@ export default class RespEncoder {
     static encodeResp(payload: RespValue): string {
         switch (payload.type) {
             case RespType.SimpleString: {
-                return this.encodeSimpleString(payload.value.toString());
+                return this.encodeSimpleString(payload.value);
             }
             
             case RespType.SimpleError: {
-                return this.encodeSimpleError(payload.value.toString());
+                return this.encodeSimpleError(payload.value);
             }
             
             case RespType.Integer: {
-                return this.encodeInteger(payload.value.toString());
+                return this.encodeInteger(payload.value);
             }
                 
             case RespType.BulkString: {

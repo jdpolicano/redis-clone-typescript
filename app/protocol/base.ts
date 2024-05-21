@@ -1,19 +1,22 @@
 import Connection from "../connection";
 import type Database from "../database/database";
 import type ServerInfo from "../serverInfo"; // server info meta data...
+import type ClientInfo from "../clientInfo";
 import type net from "net";
 import AsyncLink from "../asyncLink";
 
 export interface RequestContext {
     connection: AsyncLink;
     db: Database;
-    info: ServerInfo;
+    serverInfo: ServerInfo;
+    clientInfo: ClientInfo;
 }
 
 export interface HandlerOptions {
     connection: net.Socket; 
     db: Database;
-    info: ServerInfo
+    serverInfo: ServerInfo;
+    clientInfo: ClientInfo;
 }
 
 export abstract class SocketHandler {
@@ -23,7 +26,8 @@ export abstract class SocketHandler {
         this.ctx = {
             connection: new AsyncLink(new Connection(opts.connection)),
             db: opts.db,
-            info: opts.info
+            serverInfo: opts.serverInfo,
+            clientInfo: opts.clientInfo
         }
     }
 

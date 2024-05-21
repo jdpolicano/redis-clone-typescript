@@ -33,21 +33,7 @@ export default abstract class Command {
     }
     
     abstract execute(message: RespValue): Transaction;
-
-    bulkString(value: string | null): RespValue {
-        return {
-            type: RespType.BulkString,
-            value
-        }
-    }
-
-    simpleString(value: string): RespValue {
-        return {
-            type: RespType.SimpleString,
-            value
-        }
-    }
-
+    
     transaction(type: TransactionType, value: RespValue): Transaction {
         return {
             type,
