@@ -195,10 +195,8 @@ export default class Handler extends SocketHandler {
         // if this was a write transaction.
         if (t === Transaction.Write) {
             console.log("write transaction...");
-            console.log(this.ctx.replicationStream.getIdx());
-            console.log(source.length);
-            this.ctx.replicationStream.write(source);
-            console.log(this.ctx.replicationStream.getIdx());
+            this.ctx.replicationStream.replicate(source);
+            console.log("replicated");
         }
 
         if (t === Transaction.Replication) {

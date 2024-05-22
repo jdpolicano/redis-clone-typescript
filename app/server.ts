@@ -29,7 +29,6 @@ export default class Server {
     private error?: Error; 
     private db: Database;
     private serverInfo: ServerInfo;
-    private replicas: Replica[];
     private replicationStream: ReplicationStream;
 
     constructor(options: ServerOptions = {}) {
@@ -39,7 +38,6 @@ export default class Server {
         this.exitStatus = ExitStatus.Graceful
         this.db = new Database();
         this.replicationStream = new ReplicationStream();
-        this.replicas = [];
         this.setupServerInfo(options);
     }
 
@@ -79,7 +77,6 @@ export default class Server {
                     if (ctx.clientInfo.getRole() === "replica") {
                         this.addReplica(ctx);
                     }
-                    this.propogateCommands();
                 } catch (err) {
                     console.log(`[ERR]: ${err.message}`);
                     connection.end();
@@ -151,19 +148,9 @@ export default class Server {
 
     private addReplica(ctx: RequestContext) {
         const replica = new Replica(ctx.connection, 0);
-        this.replicas.push(replica);
+        this.replicationStream.addReplica(replica);
     }
 
-    private propogateCommands() {
-        console.log("propogating commands...");
-        console.log(this.replicationStream.getBuffer());
-        this.replicas.forEach(replica => {
-            const stream = this.replicationStream.getSlice();
-            console.log("writing to replica: ", stream);
-            replica.write(stream);
-            replica.setStreamIdx(this.replicationStream.getIdx());
-        });
-    }
 
     private setupServerInfo(options: ServerOptions) {
         if (options.replicaof) {
