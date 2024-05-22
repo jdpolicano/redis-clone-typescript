@@ -109,7 +109,7 @@ export default class ReplicationHandler extends SocketHandler {
     }
 
     private processPsyncResponse(response: string): [string, number] {
-        const parts == response.split(" ");
+        const parts = response.split(" ");
         if (parts.length !== 3 || parts[0] !== "FULLRESYNC") {
             this.setState(ReplicationState.Error);
             throw new Error("Invalid PSYNC response received " + response);
