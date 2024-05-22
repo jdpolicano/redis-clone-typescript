@@ -40,7 +40,13 @@ export default class Handler extends SocketHandler {
         }
         while (!this.shouldExit) {
             try {
+                if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
+                    console.log("awaiting messages.");
+                }
                 const message = await this.ctx.connection.readMessage();
+                if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
+                    console.log("received message.", JSON.stringify(message.value));
+                }
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {
