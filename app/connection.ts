@@ -60,6 +60,10 @@ export default class Connection extends EventEmitter {
         this.socket.write(RespEncoder.encodeResp(data));
     }
 
+    public write(data: string | Uint8Array) {
+        this.socket.write(data);
+    }
+
     public setRawMode() {
         this.shouldTranslate = false;
         if (this.buffer.length > 0) {

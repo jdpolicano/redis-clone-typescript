@@ -111,6 +111,14 @@ export default class AsyncLink {
     }
 
     /**
+     * Writes data to the connection.
+     * @param data The data to write.
+     */
+    public write(data: string | Uint8Array) {
+        this.connection.write(data);
+    }
+
+    /**
      * Sets the connection to raw mode.
      */
     public setRawMode() {

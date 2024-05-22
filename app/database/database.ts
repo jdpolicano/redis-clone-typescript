@@ -33,6 +33,18 @@ export default class Database {
 
         return dbEntry;
     }
+
+    /**
+     * Temporary method to return the RDB file.
+     * @returns 
+     */
+    public getRdbFile(): Buffer {
+        const rdb = Buffer.from("UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==", "base64");
+        return Buffer.concat([
+            Buffer.from(`$${rdb.length.toString()}\r\n`),
+            rdb
+        ])
+    }
     
     public del(key: string): void {
         this.data.delete(key);
