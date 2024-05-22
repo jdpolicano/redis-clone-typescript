@@ -15,6 +15,7 @@ import { Transaction } from "../commands/base";
 import { SocketHandler, type HandlerOptions } from "./base";
 import type { Message } from "../connection";
 import Replica from "../replica";
+import AsyncLink from "../asyncLink";
 
 
 /**
@@ -35,18 +36,9 @@ export default class Handler extends SocketHandler {
      * @returns A promise that resolves when the handling is complete.
      */
     public async handle() {
-        if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
-            console.log("begin listening to master...");
-        }
         while (!this.shouldExit) {
             try {
-                if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
-                    console.log("awaiting messages.");
-                }
                 const message = await this.ctx.connection.readMessage();
-                if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
-                    console.log("received message.", JSON.stringify(message.value));
-                }
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {

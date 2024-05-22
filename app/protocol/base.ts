@@ -21,7 +21,7 @@ export interface Internals {
 }
 
 export interface HandlerOptions {
-    connection: net.Socket; 
+    connection: AsyncLink; 
     db: Database;
     serverInfo: ServerInfo;
     clientInfo: ClientInfo;
@@ -33,7 +33,7 @@ export abstract class SocketHandler {
 
     constructor(opts: HandlerOptions) { 
         this.ctx = {
-            connection: new AsyncLink(new Connection(opts.connection)),
+            connection: opts.connection,
             db: opts.db,
             serverInfo: opts.serverInfo,
             clientInfo: opts.clientInfo,
@@ -54,5 +54,17 @@ export abstract class SocketHandler {
 
     public cleanup() {
         this.ctx.connection.cleanup();
+    }
+
+    public swapSocket(socket: net.Socket) {
+        this.ctx.connection = new AsyncLink(new Connection(socket));
+    }
+
+    public swapConnection(connection: Connection) {
+        this.ctx.connection = new AsyncLink(connection);
+    }
+
+    public swapLink(link: AsyncLink) {
+        this.ctx.connection = link;
     }
 }

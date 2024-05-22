@@ -4,9 +4,9 @@ import ReplicationHandler from "./protocol/replication";
 import Database from "./database/database";
 import ServerInfo from "./serverInfo";
 import ClientInfo from "./clientInfo";
-import Replica from "./replica";
 import ReplicationStream from "./replicationStream";
-import type { RequestContext } from "./protocol/base";
+import AsyncLink from "./asyncLink";
+import Connection from "./connection";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -62,8 +62,9 @@ export default class Server {
             this.listener.on("connection", async (connection) => {
                 // will be used to keep track of replicas...
                 const clientInfo = new ClientInfo();
+                const link = new AsyncLink(new Connection(connection));
                 const handler = new Handler({
-                    connection,
+                    connection: link,
                     db: this.db,
                     serverInfo: this.serverInfo,
                     clientInfo,
@@ -113,8 +114,9 @@ export default class Server {
             port: parseInt(port)
         });
 
+        const link = new AsyncLink(new Connection(socket));
         const replicationHandler = new ReplicationHandler({
-            connection: socket,
+            connection: link,
             db: this.db,
             serverInfo: this.serverInfo,
             clientInfo: new ClientInfo(),
@@ -123,14 +125,12 @@ export default class Server {
 
         await replicationHandler.handle();
         console.log("replicating...");
-        // replicationHandler.cleanup(); // removes all listeners from the connection to the master.
-        console.log("replication handler severed...");
 
         const clientInfo = new ClientInfo();
         clientInfo.setRole("master");
         // all handlers should be reattached at this point.
         const replicationSession = new Handler({
-            connection: socket,
+            connection: link,
             db: this.db,
             serverInfo: this.serverInfo,
             clientInfo,

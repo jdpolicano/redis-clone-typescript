@@ -19,6 +19,7 @@ export default class ReplicationStream {
     public replicate(data: Buffer) {
         if (this.idx + data.length >= this.MAX_BUFFER_SIZE) {
             console.log("replication stream full");
+            this.idx = 0;
         }
         data.copy(this.buffer, this.idx);
         this.idx += data.length;
