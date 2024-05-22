@@ -97,11 +97,28 @@ export default class ReplicationHandler extends SocketHandler {
         ]));
         const response = await this.ctx.connection.readMessage();
         
-        // todo: will need to store the info on the master's replication ID and offset...
-        if (response.type !== RespType.Array) { throw new Error("Expected array response from PSYNC"); }
-        
-        console.log("sent psync");
+        this.expectType(response, RespType.SimpleString);
+
+        // expectType confirmed this is a string
+        const [id, offset] = this.processPsyncResponse(response.value as string);
+
+        this.ctx.serverInfo.setMasterReplid(id);
+        this.ctx.serverInfo.setMasterReploffset(offset);
+    
         return ReplicationState.SentPsync;
+    }
+
+    private processPsyncResponse(response: string): [string, number] {
+        const parts == response.split(" ");
+        if (parts.length !== 3 || parts[0] !== "FULLRESYNC") {
+            this.setState(ReplicationState.Error);
+            throw new Error("Invalid PSYNC response received " + response);
+        }
+
+        const id = parts[1];
+        const offset = parseInt(parts[2]);
+
+        return [id, offset];
     }
     
     private expect(received: RespValue, expected: RespValue) {
@@ -116,6 +133,12 @@ export default class ReplicationHandler extends SocketHandler {
         }
     }
 
+    private expectType(received: RespValue, type: RespType) {
+        if (received.type !== type) {
+            this.setState(ReplicationState.Error);
+            throw new Error(`Expected ${type} but got ${received.type}`);
+        }
+    }
 
     private setState(state: ReplicationState) {
         this.state = state;
