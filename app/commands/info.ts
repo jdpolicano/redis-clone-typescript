@@ -9,7 +9,9 @@ export default class Info extends Command {
     }
 
     public execute() {
+        const payload = RespBuilder.bulkString(this.formatInfo());
         this.ctx.connection.writeResp(RespBuilder.bulkString(this.formatInfo()));
+        this.reply(() => this.ctx.connection.writeResp(payload));
         return Transaction.Other
     }
     

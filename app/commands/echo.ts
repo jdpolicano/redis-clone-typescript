@@ -15,7 +15,7 @@ export default class Echo extends Command {
     }
 
     public execute(): Transaction {
-        this.ctx.connection.writeResp(this.options.msgToEcho);
+        this.reply(() => this.ctx.connection.writeResp(this.options.msgToEcho));
         return Transaction.Other
     }
 }

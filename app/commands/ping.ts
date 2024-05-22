@@ -8,7 +8,7 @@ export default class Ping extends Command {
     }
 
     public execute(): Transaction {
-        this.ctx.connection.writeResp(RespBuilder.simpleString("PONG"));
+        this.reply(() => this.ctx.connection.writeResp(RespBuilder.simpleString("PONG")));
         return Transaction.Other
     }
 }

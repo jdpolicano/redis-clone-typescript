@@ -25,7 +25,7 @@ export default class Replconf extends Command {
             this.ctx.internals.capabilities = this.options.capabilities;
         }
 
-        this.ctx.connection.writeResp(RespBuilder.simpleString("OK"));
+        this.reply(() => this.ctx.connection.writeResp(RespBuilder.simpleString("OK")));
         return Transaction.Internals;
     }
 

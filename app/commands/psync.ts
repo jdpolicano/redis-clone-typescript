@@ -20,8 +20,8 @@ export default class Replconf extends Command {
         // todo do something with the id and offset...
         const fullResync = `FULLRESYNC ${this.ctx.serverInfo.getMasterReplid()} ${this.ctx.serverInfo.getMasterReplOffset()}`;
         const rdbFile = this.ctx.db.getRdbFile();
-        this.ctx.connection.writeResp(RespBuilder.simpleString(fullResync));
-        this.ctx.connection.write(rdbFile);
+        this.reply(() => this.ctx.connection.writeResp(RespBuilder.simpleString(fullResync)));
+        this.reply(() => this.ctx.connection.write(rdbFile));
         this.ctx.clientInfo.setRole("replica");
         return Transaction.Replication;
     }

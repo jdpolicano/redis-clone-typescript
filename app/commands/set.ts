@@ -33,7 +33,7 @@ export default class Set extends Command {
         }
 
         this.ctx.db.set(this.options.key, this.options.value, expiry);
-        this.ctx.connection.writeResp(RespBuilder.simpleString("OK"));
+        this.reply(() => this.ctx.connection.writeResp(RespBuilder.simpleString("OK")));
         return Transaction.Write;
     }
 

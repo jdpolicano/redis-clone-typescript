@@ -20,10 +20,26 @@ export enum Transaction {
 
 export default abstract class Command {
     protected ctx: RequestContext;
+    protected shouldReply: boolean = true;
 
     constructor(ctx: RequestContext) {
         this.ctx = ctx;
     }
     
     abstract execute(message: RespValue): Transaction;
+
+    public setReply(shouldReply: boolean) {
+        this.shouldReply = shouldReply;
+    }
+
+    /**
+     * Passthrough method that allows the command to reply to the client.
+     * Only replies if the shouldReply flag is set to true.
+     * @param cb 
+     */
+    protected reply(cb: () => void) {
+        if (this.shouldReply) {
+            cb();
+        }
+    }
 }

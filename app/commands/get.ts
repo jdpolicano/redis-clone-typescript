@@ -18,10 +18,10 @@ export default class Get extends Command {
     public execute(): Transaction {
         const key = this.ctx.db.get(this.options.key);
         if (key) {
-            this.ctx.connection.writeResp(key.value);
+            this.reply(() => this.ctx.connection.writeResp(key.value));
             return Transaction.Read;
         } else {
-            this.ctx.connection.writeResp(RespBuilder.bulkString(null));
+            this.reply(() => this.ctx.connection.writeResp(RespBuilder.bulkString(null)));
             return Transaction.ReadFail;
         }
     }

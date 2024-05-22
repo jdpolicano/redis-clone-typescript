@@ -81,13 +81,28 @@ export default class Handler extends SocketHandler {
             return;
         }
 
+        return this.routeCommand(commandName, args, msg);
+    }
+
+    /**
+     * Routes a command for a master server.
+     * @param commandName - The name of the command.
+     * @param args - The arguments for the command.
+     */
+    private routeCommand(commandName: string, args: RespBulkString[], msg: Message) {
         switch (commandName.toString().toLowerCase()) {
             case "ping":
                 return this.execPing(args.slice(1), msg.source);
             case "echo":
                 return this.execEcho(args.slice(1), msg.source);
-            case "set":
+            case "set": {
+                if (this.ctx.serverInfo.getRole() === "slave"
+                    && this.ctx.clientInfo.getRole() !== "master") {
+                    this.ctx.connection.writeString("ERR server is read-only");
+                    return;
+                }
                 return this.execSet(args.slice(1), msg.source);
+            }
             case "get":
                 return this.execGet(args.slice(1), msg.source);
             case "info":
@@ -101,7 +116,6 @@ export default class Handler extends SocketHandler {
                 return;
         }
     }
-
     /**
      * Executes the "ping" command.
      * @param args - The arguments for the command.
@@ -148,10 +162,13 @@ export default class Handler extends SocketHandler {
             this.ctx.connection.writeString("ERR expected 2 arguments");
             return;
         }
-        
         // todo: The other commands should implement this pattern too.
         const options = Set.parseSetOptions(args);
         const command = new Set(this.ctx, options);
+        // the replica should not reply to the master when it forwards.
+        if (this.ctx.serverInfo.getRole() === "slave") {
+            command.setReply(false);
+        }
         this.handleTransaction(command.execute(), source);
     }
 
