@@ -34,7 +34,7 @@ export default class Replconf extends Command {
             throw new Error("ERR client id must be a string");
         }
 
-        if (typeof args[1].value !== "number") {
+        if (!args[1].value || isNaN(parseInt(args[1].value))) {
             throw new Error("ERR offset must be a number");
         }
 
