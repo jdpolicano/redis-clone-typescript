@@ -18,8 +18,7 @@ export default class ReplicationStream {
 
     public replicate(data: Buffer) {
         if (this.idx + data.length >= this.MAX_BUFFER_SIZE) {
-            console.log("replication stream full, dumping");
-            this.idx = 0;
+            console.log("replication stream full");
         }
         data.copy(this.buffer, this.idx);
         this.idx += data.length;
@@ -30,6 +29,7 @@ export default class ReplicationStream {
         for (const replica of this.connectedReplicas) {
             replica.write(this.buffer.subarray(0, this.idx));
         }
+        this.idx = 0; 
     }
 
     public getSlice(): Buffer {

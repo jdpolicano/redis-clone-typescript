@@ -72,14 +72,8 @@ export default class Server {
                 
                 try {
                     await handler.handle();
-                    const ctx = handler.getCtx();
-                    // if the client successfully negoatiated a replication via psync this should be set.
-                    if (ctx.clientInfo.getRole() === "replica") {
-                        this.addReplica(ctx);
-                    }
                 } catch (err) {
                     console.log(`[ERR]: ${err.message}`);
-                    connection.end();
                 }
             });
 
@@ -145,12 +139,6 @@ export default class Server {
 
         return replicationSession.handle();
     }
-
-    private addReplica(ctx: RequestContext) {
-        const replica = new Replica(ctx.connection, 0);
-        this.replicationStream.addReplica(replica);
-    }
-
 
     private setupServerInfo(options: ServerOptions) {
         if (options.replicaof) {

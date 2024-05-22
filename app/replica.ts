@@ -3,7 +3,7 @@ import AsyncLink from "./asyncLink";
 export default class Replica {
     connection: AsyncLink;
 
-    constructor(connection: AsyncLink, streamIdx: number) {
+    constructor(connection: AsyncLink) {
         this.connection = connection;
     }
     

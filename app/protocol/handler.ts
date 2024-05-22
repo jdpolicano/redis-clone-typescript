@@ -14,6 +14,7 @@ import Psync from "../commands/psync"; // psync command
 import { Transaction } from "../commands/base";
 import { SocketHandler, type HandlerOptions } from "./base";
 import type { Message } from "../connection";
+import Replica from "../replica";
 
 
 /**
@@ -37,7 +38,6 @@ export default class Handler extends SocketHandler {
         while (!this.shouldExit) {
             try {
                 const message = await this.ctx.connection.readMessage();
-                console.log(JSON.stringify(message.value));
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {
@@ -169,9 +169,14 @@ export default class Handler extends SocketHandler {
      * @param args - The arguments for the command.
      */
     private execReplconf(args: RespBulkString[], source: Buffer) {
-        const options = Replconf.parseArgs(args);
-        const command = new Replconf(this.ctx, options);
-        this.handleTransaction(command.execute(), source);
+        try {
+            const options = Replconf.parseArgs(args);
+            const command = new Replconf(this.ctx, options);
+            this.handleTransaction(command.execute(), source);
+        } catch (e) {
+            this.ctx.connection.writeString("ERR unable to parse arguments");
+            return;
+        }
     }
 
     /**
@@ -179,9 +184,14 @@ export default class Handler extends SocketHandler {
      * @param args - The arguments for the command.
      */
     private execPsync(args: RespBulkString[], source: Buffer) {
-        const options = Psync.parseArgs(args);
-        const command = new Psync(this.ctx, options);
-        this.handleTransaction(command.execute(), source);
+        try {
+            const options = Psync.parseArgs(args);
+            const command = new Psync(this.ctx, options);
+            this.handleTransaction(command.execute(), source);
+        } catch (e) {
+            this.ctx.connection.writeString("ERR unable to parse arguments");
+            return;
+        }
     }
 
     /**
@@ -193,14 +203,14 @@ export default class Handler extends SocketHandler {
         // logic here to only respond in certain circumstances...
         // we will also need to add the source message to our replication stream
         // if this was a write transaction.
-        if (t === Transaction.Write) {
-            console.log("write transaction...");
-            this.ctx.replicationStream.replicate(source);
-            console.log("replicated");
+        if (t === Transaction.Replication) {
+            const replica = new Replica(this.ctx.connection);
+            this.ctx.replicationStream.addReplica(replica);
+            this.shouldExit = true;
         }
 
-        if (t === Transaction.Replication) {
-            this.shouldExit = true;
+        if (t === Transaction.Write) {
+            this.ctx.replicationStream.replicate(source);
         }
     }
 
