@@ -123,7 +123,7 @@ export default class Server {
 
         await replicationHandler.handle();
         console.log("replicating...");
-        replicationHandler.cleanup(); // removes all listeners from the connection to the master.
+        // replicationHandler.cleanup(); // removes all listeners from the connection to the master.
         console.log("replication handler severed...");
 
         const clientInfo = new ClientInfo();
