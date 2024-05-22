@@ -5,9 +5,10 @@ import {
 } from "../resp/types";
 import Ping from "../commands/ping";
 import Echo from "../commands/echo";
-import Set, { SetOptions } from "../commands/set";
+import Set from "../commands/set";
 import Get from "../commands/get";
 import Info from "../commands/info"; // info command
+import Replconf from "../commands/replconf"; // replconf command
 import type { Transaction } from "../commands/base";
 import { SocketHandler, type HandlerOptions } from "./base";
 
@@ -82,6 +83,8 @@ export default class Handler extends SocketHandler {
                 return this.execGet(args.slice(1));
             case "info":
                 return this.execInfo(args.slice(1));
+            case "replconf":
+                return this.execReplconf(args.slice(1));
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -147,6 +150,16 @@ export default class Handler extends SocketHandler {
      */
     private execInfo(args: RespBulkString[]) {
         const command = new Info(this.ctx);
+        this.handleTransaction(command.execute());
+    }
+
+    /**
+     * Executes the "replconf" command.
+     * @param args - The arguments for the command.
+     */
+    private execReplconf(args: RespBulkString[]) {
+        const options = Replconf.parseArgs(args);
+        const command = new Replconf(this.ctx, options);
         this.handleTransaction(command.execute());
     }
 
