@@ -9,6 +9,7 @@ import Set from "../commands/set";
 import Get from "../commands/get";
 import Info from "../commands/info"; // info command
 import Replconf from "../commands/replconf"; // replconf command
+import Psync from "../commands/psync"; // psync command
 import type { Transaction } from "../commands/base";
 import { SocketHandler, type HandlerOptions } from "./base";
 
@@ -85,6 +86,8 @@ export default class Handler extends SocketHandler {
                 return this.execInfo(args.slice(1));
             case "replconf":
                 return this.execReplconf(args.slice(1));
+            case "psync":
+                return this.execPsync(args.slice(1));
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -160,6 +163,16 @@ export default class Handler extends SocketHandler {
     private execReplconf(args: RespBulkString[]) {
         const options = Replconf.parseArgs(args);
         const command = new Replconf(this.ctx, options);
+        this.handleTransaction(command.execute());
+    }
+
+    /**
+     * Executes the "psync" command.
+     * @param args - The arguments for the command.
+     */
+    private execPsync(args: RespBulkString[]) {
+        const options = Psync.parseArgs(args);
+        const command = new Psync(this.ctx, options);
         this.handleTransaction(command.execute());
     }
 
