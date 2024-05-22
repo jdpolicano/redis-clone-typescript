@@ -1,4 +1,4 @@
-import Command, { TransactionType, Transaction } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from "../protocol/base";
 import type { RespBulkString } from '../resp/types';
 import Expiration from "../database/expiration";
@@ -33,7 +33,8 @@ export default class Set extends Command {
         }
 
         this.ctx.db.set(this.options.key, this.options.value, expiry);
-        return this.transaction(TransactionType.Write, RespBuilder.simpleString("OK"));
+        this.ctx.connection.writeResp(RespBuilder.simpleString("OK"));
+        return Transaction.Write;
     }
 
    /**

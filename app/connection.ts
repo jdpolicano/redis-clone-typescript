@@ -62,6 +62,10 @@ export default class Connection extends EventEmitter {
 
     public setRawMode() {
         this.shouldTranslate = false;
+        if (this.buffer.length > 0) {
+            this.emit("rawMessage", this.buffer);
+            this.buffer = Buffer.alloc(0);
+        }
     }
 
     public setRespMode() {

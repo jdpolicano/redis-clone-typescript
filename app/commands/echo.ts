@@ -1,4 +1,4 @@
-import Command, { Transaction, TransactionType } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from "../protocol/base"
 import type { RespValue } from '../resp/types';
 
@@ -15,6 +15,7 @@ export default class Echo extends Command {
     }
 
     public execute(): Transaction {
-        return this.transaction(TransactionType.Other, this.options.msgToEcho)
+        this.ctx.connection.writeResp(this.options.msgToEcho);
+        return Transaction.Other
     }
 }

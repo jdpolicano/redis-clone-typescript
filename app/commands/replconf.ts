@@ -1,4 +1,4 @@
-import Command, { Transaction, TransactionType } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from "../protocol/base"
 import type { RespBulkString, RespValue } from '../resp/types';
 import RespBuilder from '../resp/builder';
@@ -25,7 +25,8 @@ export default class Replconf extends Command {
             this.ctx.internals.capabilities = this.options.capabilities;
         }
 
-        return this.transaction(TransactionType.Internals, RespBuilder.simpleString("OK"));
+        this.ctx.connection.writeResp(RespBuilder.simpleString("OK"));
+        return Transaction.Internals;
     }
 
     static parseArgs(args: RespBulkString[]): ReplconfOptions {

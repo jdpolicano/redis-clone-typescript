@@ -170,8 +170,6 @@ export default class Handler extends SocketHandler {
     private handleTransaction(t: Transaction) {
         // todo: if the server is a replica we will need
         // logic here to only respond in certain circumstances...
-        this.ctx.connection.writeResp(t.response);
-        console.log(this.ctx.internals);
     }
 
     /**

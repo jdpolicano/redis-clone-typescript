@@ -1,4 +1,4 @@
-import Command, { TransactionType, Transaction } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from '../protocol/base';
 import RespBuilder from '../resp/builder';
 
@@ -8,6 +8,7 @@ export default class Ping extends Command {
     }
 
     public execute(): Transaction {
-        return this.transaction(TransactionType.Other, RespBuilder.simpleString("PONG"));
+        this.ctx.connection.writeResp(RespBuilder.simpleString("PONG"));
+        return Transaction.Other
     }
 }

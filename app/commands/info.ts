@@ -1,4 +1,4 @@
-import Command, { TransactionType } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from "../protocol/base";
 import RespBuilder from '../resp/builder';
 
@@ -9,7 +9,8 @@ export default class Info extends Command {
     }
 
     public execute() {
-        return this.transaction(TransactionType.Other, RespBuilder.bulkString(this.formatInfo()));
+        this.ctx.connection.writeResp(RespBuilder.bulkString(this.formatInfo()));
+        return Transaction.Other
     }
     
     private formatInfo(): string {

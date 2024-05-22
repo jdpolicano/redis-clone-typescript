@@ -1,4 +1,4 @@
-import Command, { Transaction, TransactionType } from './base';
+import Command, { Transaction } from './base';
 import type { RequestContext } from "../protocol/base";
 import type { RespBulkString } from '../resp/types';
 import RespBuilder from '../resp/builder';
@@ -18,9 +18,11 @@ export default class Get extends Command {
     public execute(): Transaction {
         const key = this.ctx.db.get(this.options.key);
         if (key) {
-            return this.transaction(TransactionType.Read, key.value)
+            this.ctx.connection.writeResp(key.value);
+            return Transaction.Read;
         } else {
-            return this.transaction(TransactionType.ReadFail, RespBuilder.bulkString(null))
+            this.ctx.connection.writeResp(RespBuilder.bulkString(null));
+            return Transaction.ReadFail;
         }
     }
 }

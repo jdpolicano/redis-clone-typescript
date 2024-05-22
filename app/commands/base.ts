@@ -5,7 +5,7 @@ import type { RequestContext } from "../protocol/base";
  * Defines what type of transaction occurred during this command.
  * This can help the handler that execs the command to know what it should do next.
  */
-export enum TransactionType {
+export enum Transaction {
     Read, // db read
     ReadFail, // attempt to read something that wasn't there.
     Write, // db write
@@ -18,18 +18,6 @@ export enum TransactionType {
     ReplicationFail // replication failed
 }
 
-/**
- * This is what the Command actually returns. It tells the caller what kind of transaction occured,
- * What the response to the client should be, and maybe later some other meta data.
- */
-export interface Transaction {
-    type: TransactionType // what kind of transaction occured?
-    response: RespValue // what should we write back to the client?
-    // to-do: it would be cool to track the command executed, the time it took, and some other stuff later.
-}
-
-
-
 export default abstract class Command {
     protected ctx: RequestContext;
 
@@ -38,11 +26,4 @@ export default abstract class Command {
     }
     
     abstract execute(message: RespValue): Transaction;
-
-    transaction(type: TransactionType, value: RespValue): Transaction {
-        return {
-            type,
-            response: value
-        }
-    }
 }
