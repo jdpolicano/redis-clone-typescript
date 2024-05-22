@@ -10,6 +10,12 @@ export interface RequestContext {
     db: Database;
     serverInfo: ServerInfo;
     clientInfo: ClientInfo;
+    internals: Internals;
+}
+
+export interface Internals {
+    listeningPort?: string;
+    capabilities?: string[];
 }
 
 export interface HandlerOptions {
@@ -27,7 +33,8 @@ export abstract class SocketHandler {
             connection: new AsyncLink(new Connection(opts.connection)),
             db: opts.db,
             serverInfo: opts.serverInfo,
-            clientInfo: opts.clientInfo
+            clientInfo: opts.clientInfo,
+            internals: {}
         }
     }
 

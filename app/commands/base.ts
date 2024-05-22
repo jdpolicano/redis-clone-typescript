@@ -10,7 +10,12 @@ export enum TransactionType {
     ReadFail, // attempt to read something that wasn't there.
     Write, // db write
     WriteFail, // attempt to write something but failed.
-    Other // something else, i.e., ping, info, replconf, other goodies
+    Info, // info
+    Ping, // ping
+    Other, // other
+    Internals, 
+    Replication, // replication
+    ReplicationFail // replication failed
 }
 
 /**
@@ -33,7 +38,7 @@ export default abstract class Command {
     }
     
     abstract execute(message: RespValue): Transaction;
-    
+
     transaction(type: TransactionType, value: RespValue): Transaction {
         return {
             type,

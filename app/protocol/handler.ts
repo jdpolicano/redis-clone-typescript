@@ -106,6 +106,7 @@ export default class Handler extends SocketHandler {
             this.ctx.connection.writeString("ERR expected at least one argument");
             return;
         }
+
         const command = new Echo(this.ctx, { msgToEcho: args[0] });
         this.handleTransaction(command.execute());
     }
@@ -134,8 +135,8 @@ export default class Handler extends SocketHandler {
             return;
         }
         
-        const options = this.parseSetOptions(args);
-
+        // todo: The other commands should implement this pattern too.
+        const options = Set.parseSetOptions(args);
         const command = new Set(this.ctx, options);
         this.handleTransaction(command.execute());
     }
@@ -157,35 +158,7 @@ export default class Handler extends SocketHandler {
         // todo: if the server is a replica we will need
         // logic here to only respond in certain circumstances...
         this.ctx.connection.writeResp(t.response);
-    }
-
-    /**
-     * Parses the options for the "set" command.
-     * @param args - The arguments for the command.
-     * @returns The parsed options.
-     */
-    private parseSetOptions(args: RespBulkString[]): SetOptions {
-        const options: SetOptions = {
-            key: args[0],
-            value: args[1]
-        };
-
-        for (let i = 2; i < args.length; i += 2) {
-            const flag = args[i].value?.toString().toLowerCase();
-            const value = args[i + 1].value;
-
-            if (value === undefined || value === null) {
-                return options;
-            }
-
-            if (flag === "px") {
-                options.px = parseInt(value.toString());
-            } else if (flag === "ex") {
-                options.ex = parseInt(value.toString());
-            }
-        }
-
-        return options;
+        console.log(this.ctx.internals);
     }
 
     /**

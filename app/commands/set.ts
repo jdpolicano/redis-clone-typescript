@@ -35,4 +35,33 @@ export default class Set extends Command {
         this.ctx.db.set(this.options.key, this.options.value, expiry);
         return this.transaction(TransactionType.Write, RespBuilder.simpleString("OK"));
     }
+
+   /**
+    * Parses the options for the "set" command.
+    * @param args - The arguments for the command.
+    * @returns The parsed options.
+    */
+   static parseSetOptions(args: RespBulkString[]): SetOptions {
+       const options: SetOptions = {
+           key: args[0],
+           value: args[1]
+       };
+
+       for (let i = 2; i < args.length; i += 2) {
+           const flag = args[i].value?.toString().toLowerCase();
+           const value = args[i + 1].value;
+
+           if (value === undefined || value === null) {
+               return options;
+           }
+
+           if (flag === "px") {
+               options.px = parseInt(value.toString());
+           } else if (flag === "ex") {
+               options.ex = parseInt(value.toString());
+           }
+       }
+
+       return options;
+   }
 }
