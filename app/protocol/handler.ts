@@ -35,6 +35,9 @@ export default class Handler extends SocketHandler {
      * @returns A promise that resolves when the handling is complete.
      */
     public async handle() {
+        if (this.ctx.serverInfo.getRole() === "slave" && this.ctx.clientInfo.getRole() === "master") {
+            console.log("begin listening to master...");
+        }
         while (!this.shouldExit) {
             try {
                 const message = await this.ctx.connection.readMessage();
