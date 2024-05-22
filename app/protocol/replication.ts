@@ -58,8 +58,8 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async checkServerAlive(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["PING"]));
-        const response = await this.ctx.connection.readMessage();
-        this.expect(response, RespBuilder.simpleString("PONG"));
+        const { value } = await this.ctx.connection.readMessage();
+        this.expect(value, RespBuilder.simpleString("PONG"));
         console.log("master is alive");
         return ReplicationState.ServerAlive;
     }
@@ -69,8 +69,8 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async notifyListeningPort(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["REPLCONF", "listening-port", this.ctx.serverInfo.getPort()]));
-        const response = await this.ctx.connection.readMessage();
-        this.expect(response, RespBuilder.simpleString("OK"));
+        const { value } = await this.ctx.connection.readMessage();
+        this.expect(value, RespBuilder.simpleString("OK"));
         console.log("sent listening port")
         return ReplicationState.SentListeningPort;
     }
@@ -80,8 +80,8 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async notifyCapabilities(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["REPLCONF", "capa", "psync2"]));
-        const response = await this.ctx.connection.readMessage();
-        this.expect(response, RespBuilder.simpleString("OK"));
+        const { value } = await this.ctx.connection.readMessage();
+        this.expect(value, RespBuilder.simpleString("OK"));
         console.log("sent capabilities");
         return ReplicationState.SentCapabilities;
     };
@@ -95,16 +95,15 @@ export default class ReplicationHandler extends SocketHandler {
              this.ctx.serverInfo.getMasterReplid(),
              this.ctx.serverInfo.getMasterReplOffset().toString()
         ]));
-        const response = await this.ctx.connection.readMessage();
-        
-        this.expectType(response, RespType.SimpleString);
-
-        // expectType confirmed this is a string
-        const [id, offset] = this.processPsyncResponse(response.value as string);
-
+        const { value } = await this.ctx.connection.readMessage();
+        this.expectType(value, RespType.SimpleString);
+        const [id, offset] = this.processPsyncResponse(value.value as string); // expectType confirmed this is a string
         this.ctx.serverInfo.setMasterReplid(id);
         this.ctx.serverInfo.setMasterReploffset(offset);
-    
+        this.ctx.connection.setRawMode();
+        // read the RDB file - todo: implement this
+        const rdbfile = await this.ctx.connection.readRawMessage();
+        this.ctx.connection.setRespMode();
         return ReplicationState.SentPsync;
     }
 

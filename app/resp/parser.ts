@@ -48,8 +48,6 @@ export default class RespParser {
             case "*".charCodeAt(0):
                 result = this.readArray(data);
                 break;
-            default:
-    
         }
 
         if (result === null) {
@@ -60,7 +58,7 @@ export default class RespParser {
 
         return {
             value: result,
-            source: data.subarray(this.parseIndex)
+            source: data.subarray(0, this.parseIndex)
         }; // return the result
     }
 
@@ -73,7 +71,7 @@ export default class RespParser {
 
         return {
             type: RespType.SimpleString,
-            value: value.toString("binary")
+            value: value.toString()
         };
     }
 
@@ -86,7 +84,7 @@ export default class RespParser {
 
         return {
             type: RespType.SimpleError,
-            value: value.toString("binary")
+            value: value.toString()
         };
     }
 
@@ -99,7 +97,7 @@ export default class RespParser {
 
         return {
             type: RespType.Integer,
-            value: value.toString("binary")
+            value: value.toString()
         };
     }
 
@@ -147,7 +145,7 @@ export default class RespParser {
         for (let i = 0; i < count; i++) {
             const item = this.parse(data);
 
-            if (item.value === undefined) {
+            if (!item.value) {
                 return null;
             }
 

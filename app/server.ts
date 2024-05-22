@@ -4,6 +4,9 @@ import ReplicationHandler from "./protocol/replication";
 import Database from "./database/database";
 import ServerInfo from "./serverInfo";
 import ClientInfo from "./clientInfo";
+import Replica from "./replica";
+import ReplicationStream from "./replicationStream";
+import type { RequestContext } from "./protocol/base";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -26,6 +29,8 @@ export default class Server {
     private error?: Error; 
     private db: Database;
     private serverInfo: ServerInfo;
+    private replicas: Replica[];
+    private replicationStream: ReplicationStream;
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
@@ -33,6 +38,8 @@ export default class Server {
         this.port = options.port ? options.port : "6379";
         this.exitStatus = ExitStatus.Graceful
         this.db = new Database();
+        this.replicationStream = new ReplicationStream();
+        this.replicas = [];
         this.setupServerInfo(options);
     }
 
@@ -40,11 +47,13 @@ export default class Server {
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
     public async start(): Promise<void> {
+
         if (this.serverInfo.getRole() === "master") {
             return this.listen();
         } else {
-            await this.negotiateReplication();
-            return this.listen();
+            const replicationSession = this.negotiateReplication();
+            const listener = this.listen();
+            await Promise.all([replicationSession, listener]);
         }
     }
 
@@ -52,17 +61,29 @@ export default class Server {
         return new Promise((resolve, reject) => {
             this.listener.listen({ port: parseInt(this.port) });
       
-            this.listener.on("connection", (connection) => {
+            this.listener.on("connection", async (connection) => {
                 // will be used to keep track of replicas...
                 const clientInfo = new ClientInfo();
                 const handler = new Handler({
                     connection,
                     db: this.db,
                     serverInfo: this.serverInfo,
-                    clientInfo
+                    clientInfo,
+                    replicationStream: this.replicationStream
                 });
-
-                handler.handle();
+                
+                try {
+                    await handler.handle();
+                    const ctx = handler.getCtx();
+                    // if the client successfully negoatiated a replication via psync this should be set.
+                    if (ctx.clientInfo.getRole() === "replica") {
+                        this.addReplica(ctx);
+                    }
+                    this.propogateCommands();
+                } catch (err) {
+                    console.log(`[ERR]: ${err.message}`);
+                    connection.end();
+                }
             });
 
 
@@ -93,7 +114,7 @@ export default class Server {
         })
     }
 
-    private negotiateReplication(): Promise<void> {
+    private async negotiateReplication(): Promise<void> {
         const [host, port] = this.serverInfo.getMasterAddressParts();
         // connect to the master and send a ping request.
         const socket = net.createConnection({
@@ -105,10 +126,43 @@ export default class Server {
             connection: socket,
             db: this.db,
             serverInfo: this.serverInfo,
-            clientInfo: new ClientInfo()
+            clientInfo: new ClientInfo(),
+            replicationStream: this.replicationStream
         }); 
 
-        return replicationHandler.handle();
+        await replicationHandler.handle();
+        console.log("replicating...");
+        replicationHandler.cleanup(); // removes all listeners from the connection to the master.
+        console.log("replication handler severed...");
+
+        const clientInfo = new ClientInfo();
+        clientInfo.setRole("master");
+        // all handlers should be reattached at this point.
+        const replicationSession = new Handler({
+            connection: socket,
+            db: this.db,
+            serverInfo: this.serverInfo,
+            clientInfo,
+            replicationStream: this.replicationStream
+        });
+
+        return replicationSession.handle();
+    }
+
+    private addReplica(ctx: RequestContext) {
+        const replica = new Replica(ctx.connection, 0);
+        this.replicas.push(replica);
+    }
+
+    private propogateCommands() {
+        console.log("propogating commands...");
+        console.log(this.replicationStream.getBuffer());
+        this.replicas.forEach(replica => {
+            const stream = this.replicationStream.getSlice();
+            console.log("writing to replica: ", stream);
+            replica.write(stream);
+            replica.setStreamIdx(this.replicationStream.getIdx());
+        });
     }
 
     private setupServerInfo(options: ServerOptions) {

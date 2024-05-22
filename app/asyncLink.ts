@@ -1,4 +1,5 @@
 import type Connection from "./connection";
+import type { Message } from "./connection";
 import type { RespValue } from "./resp/types";
 
 
@@ -7,7 +8,7 @@ import type { RespValue } from "./resp/types";
  */
 export default class AsyncLink {
     private connection: Connection;
-    private msgQueue: RespValue[];
+    private msgQueue: Message[];
     private rawMsgQueue: Buffer[];
     private isClosed: boolean;
 
@@ -136,7 +137,7 @@ export default class AsyncLink {
      * Returns an async generator that yields the next message.
      * @returns An async generator that yields the next message.
      */
-    public async* nextMsg(): AsyncGenerator<RespValue> {
+    public async* nextMsg(): AsyncGenerator<Message> {
         while (true) {
             if (this.isClosed || this.connection.isRawMode()) {
                 return;
@@ -187,7 +188,7 @@ export default class AsyncLink {
      * Reads the next message from the connection.
      * @returns A promise that resolves to the next message.
      */
-    public async readMessage(): Promise<RespValue> {
+    public async readMessage(): Promise<Message> {
         const gen = this.nextMsg();
         const { value, done } = await gen.next();
 
@@ -213,5 +214,11 @@ export default class AsyncLink {
         }
 
         return value;
+    }
+
+    public cleanup() {
+        this.connection.cleanup();
+        this.connection.removeAllListeners();
+        this.isClosed = true;
     }
 }

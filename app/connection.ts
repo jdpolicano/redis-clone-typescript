@@ -4,6 +4,10 @@ import RespParser from "./resp/parser";
 import RespEncoder from "./resp/encoder";
 import type { RespValue } from "./resp/types";
 
+export interface Message {
+    value: RespValue,
+    source: Buffer
+}
 /**
  * A connection struct representing a wrapper on a tcp net socket.
  * 
@@ -12,9 +16,8 @@ import type { RespValue } from "./resp/types";
  * - close: emitted when the connection is closed.
  * - error: emitted when an error occurs.
  */
-
 interface ConnectionEvents {
-    message: (data: RespValue) => void;
+    message: (data: Message) => void;
     error: (error: Error) => void;
     rawMessage: (data: Buffer) => void;
     close: () => void;
@@ -49,19 +52,19 @@ export default class Connection extends EventEmitter {
     }
 
     public writeString(data: string) {
-        this.socket.write(RespEncoder.encodeSimpleString(data));
+        this.socket.write(RespEncoder.encodeSimpleString(data), "binary");
     }
 
     public writeError(data: string) {
-        this.socket.write(RespEncoder.encodeSimpleError(data));
+        this.socket.write(RespEncoder.encodeSimpleError(data), "binary");
     }
 
     public writeResp(data: RespValue) {
-        this.socket.write(RespEncoder.encodeResp(data));
+        this.socket.write(RespEncoder.encodeResp(data), "binary");
     }
 
-    public write(data: string | Uint8Array) {
-        this.socket.write(data);
+    public write(data: string | Uint8Array, encoding?: BufferEncoding) {
+        this.socket.write(data, encoding);
     }
 
     public setRawMode() {
@@ -92,16 +95,16 @@ export default class Connection extends EventEmitter {
             const parser = new RespParser();
             
             try {
-                const message = parser.parse(this.buffer);
-
-                if (message.value) {
-                    this.emit("message", message.value);
+                const { value, source } = parser.parse(this.buffer);
+               
+                if (value !== undefined) {
+                    this.emit("message", { value, source });
                 }
 
-                if (message.source.length === 0) {
+                if (source.length === this.buffer.length) {
                     this.buffer = Buffer.alloc(0);
                 } else {
-                    this.buffer = this.buffer.subarray(this.buffer.length - message.source.length);
+                    this.buffer = this.buffer.subarray(this.buffer.length - source.length);
                 }
             } catch (e) {
                 this.emit("error", e);
@@ -116,5 +119,9 @@ export default class Connection extends EventEmitter {
         this.socket.on("error", (e) => {
             this.emit("error", e);
         });
+    }
+
+    public cleanup() {
+        this.socket.removeAllListeners();
     }
 }
