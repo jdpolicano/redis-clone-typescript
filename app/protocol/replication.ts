@@ -1,5 +1,5 @@
 import { SocketHandler, type HandlerOptions } from "../protocol/base";
-import { RespValue } from "../resp/types";
+import { RespValue, RespType } from "../resp/types";
 import RespBuilder from "../resp/builder";
 
 enum ReplicationState {
@@ -96,7 +96,10 @@ export default class ReplicationHandler extends SocketHandler {
              this.ctx.serverInfo.getMasterReplOffset().toString()
         ]));
         const response = await this.ctx.connection.readMessage();
-        this.expect(response, RespBuilder.simpleString("FULLRESYNC"));
+        
+        // todo: will need to store the info on the master's replication ID and offset...
+        if (response.type !== RespType.Array) { throw new Error("Expected array response from PSYNC"); }
+        
         console.log("sent psync");
         return ReplicationState.SentPsync;
     }
@@ -112,6 +115,7 @@ export default class ReplicationHandler extends SocketHandler {
             throw new Error(`Expected ${expected.type} but got ${received.type}`);
         }
     }
+
 
     private setState(state: ReplicationState) {
         this.state = state;
