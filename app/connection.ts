@@ -66,6 +66,10 @@ export default class Connection {
         let maxRetries = 10; // arbitary number of retries for now...
 
         while (retries < maxRetries) {
+            if (this.is_closed) {
+                throw new Error("ERR socket died while reading...");
+            }
+
             let result: ParseResult<T>;
             try {
                 result = parser.parse(this.buffer);
