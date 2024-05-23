@@ -102,18 +102,12 @@ export default class Handler extends SocketHandler {
      */
     private routeCommand(commandName: string, args: RespBulkString[], msg: Message) {
         switch (commandName.toString().toLowerCase()) {
-            case "ping":
+            case "ping": 
                 return this.execPing(args.slice(1), msg.source);
             case "echo":
                 return this.execEcho(args.slice(1), msg.source);
-            case "set": {
-                if (this.ctx.serverInfo.getRole() === "slave"
-                    && this.ctx.clientInfo.getRole() !== "master") {
-                    this.ctx.connection.writeString("ERR server is read-only");
-                    return;
-                }
+            case "set": 
                 return this.execSet(args.slice(1), msg.source);
-            }
             case "get":
                 return this.execGet(args.slice(1), msg.source);
             case "info":
@@ -133,6 +127,13 @@ export default class Handler extends SocketHandler {
      */
     private execPing(args: RespBulkString[], source: Buffer) {
         const command = new Ping(this.ctx);
+        
+        if (this.ctx.clientInfo.getRole() === "master") {
+            // todo: the replica should keep track of the state of 
+            // this connection somewhere.
+            command.setReply(false);
+        }
+
         this.handleTransaction(command.execute(), source);
     }
 
@@ -171,6 +172,12 @@ export default class Handler extends SocketHandler {
     private execSet(args: RespBulkString[], source: Buffer) { 
         if (args.length < 2) {
             this.ctx.connection.writeString("ERR expected 2 arguments");
+            return;
+        }
+
+        if (this.ctx.serverInfo.getRole() === "slave" 
+            && this.ctx.clientInfo.getRole() !== "master") {
+            this.ctx.connection.writeString("ERR server is read-only");
             return;
         }
         // todo: The other commands should implement this pattern too.
