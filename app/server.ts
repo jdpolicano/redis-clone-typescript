@@ -5,7 +5,6 @@ import Database from "./database/database";
 import ServerInfo from "./serverInfo";
 import ClientInfo from "./clientInfo";
 import ReplicationStream from "./replicationStream";
-import AsyncLink from "./asyncLink";
 import Connection from "./connection";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.

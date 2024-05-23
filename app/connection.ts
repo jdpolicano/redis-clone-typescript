@@ -8,6 +8,12 @@ import type {
     Parser
 } from "../interfaces/parser";
 
+export enum ReadError {
+    EREADDEAD = "ERR called read on a closed socket",
+    EREADCLOSED = "ERR socket closed while attempting read",
+    EMALFORMED = "ERR malformed data",
+}
+
 export default class Connection {
     private socket: net.Socket;
     private buffer: Buffer;
@@ -55,7 +61,7 @@ export default class Connection {
 
     private async read<T>(parser: Parser<T>): Promise<ParseSuccess<T>> {
         if (this.is_closed) {
-            throw new Error("ERR called read on a dead socket");
+            throw new Error(ReadError.EREADDEAD);
         }
 
         if (this.buffer.length === 0) {
@@ -67,7 +73,7 @@ export default class Connection {
 
         while (retries < maxRetries) {
             if (this.is_closed) {
-                throw new Error("ERR socket died while reading...");
+                throw new Error(ReadError.EREADCLOSED);
             }
 
             let result: ParseResult<T>;
@@ -75,7 +81,7 @@ export default class Connection {
                 result = parser.parse(this.buffer);
             } catch (e) {
                 this.is_closed = true;
-                throw e;
+                throw new Error(ReadError.EMALFORMED);
             }
 
             if (result.ok) {

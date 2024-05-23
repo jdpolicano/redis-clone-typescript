@@ -22,15 +22,15 @@ export default class ReplicationStream {
             this.idx = 0;
         }
         data.copy(this.buffer, this.idx);
-        this.idx += data.length;
-        this.propogateToReplicas();
+        this.propogateToReplicas(this.idx, this.idx + data.length);
     }
 
-    private propogateToReplicas() {
+    private propogateToReplicas(start: number, end: number) {
+        const buf = this.buffer.subarray(start, end);
         for (const replica of this.connectedReplicas) {
-            replica.write(this.buffer.subarray(0, this.idx));
+            replica.write(buf);
         }
-        this.idx = 0; 
+        this.idx = end;
     }
 
     public getSlice(): Buffer {

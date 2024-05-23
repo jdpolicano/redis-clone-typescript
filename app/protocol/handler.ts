@@ -18,6 +18,7 @@ import {
 } from "./base";
 import Replica from "../replica";
 import type { ParseSuccess } from "../../interfaces/parser";
+import { ReadError } from "../connection";
 
 
 type Message = ParseSuccess<RespValue>;
@@ -46,6 +47,11 @@ export default class Handler extends SocketHandler {
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {
+                if (e.message === ReadError.EREADCLOSED) {
+                    console.log("connection closed");
+                    return;
+                }
+
                 console.log(e.message);
                 return;
             }
@@ -231,9 +237,26 @@ export default class Handler extends SocketHandler {
             this.shouldExit = true;
         }
 
+        if (this.ctx.serverInfo.getRole() === "master") {
+            this.masterTransaction(t, source);
+        } else {
+            this.slaveTransaction(t, source);
+        }
+    }
+
+    private masterTransaction(t: Transaction, source: Buffer) {
+        if (t === Transaction.Write) {
+            this.ctx.replicationStream.replicate(source);
+            this.ctx.serverInfo.incrementMasterReplOffset(source.length);
+        }
+    }
+
+    private slaveTransaction(t: Transaction, source: Buffer) {
         if (t === Transaction.Write) {
             this.ctx.replicationStream.replicate(source);
         }
+
+        this.ctx.serverInfo.incrementMasterReplOffset(source.length);
     }
 
     /**

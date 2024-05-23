@@ -96,14 +96,13 @@ export default class ReplicationHandler extends SocketHandler {
              this.ctx.serverInfo.getMasterReplOffset().toString()
         ]));
         const { value } = await this.ctx.connection.readResp();
-        const rdbfile = await this.ctx.connection.readRdbFile();
-        console.log("received RDB file: ", rdbfile);
-
         this.expectType(value, RespType.SimpleString);
         const [id, offset] = this.processPsyncResponse(value.value as string); // expectType confirmed this is a string
         this.ctx.serverInfo.setMasterReplid(id);
-        this.ctx.serverInfo.setMasterReploffset(offset);
+        this.ctx.serverInfo.setMasterReplOffset(offset);
+
         // read the RDB file - todo: implement this
+        const rdbfile = await this.ctx.connection.readRdbFile();
         return ReplicationState.SentPsync;
     }
 

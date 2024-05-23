@@ -16,6 +16,9 @@ export interface ReplicationInfo {
 
     /**
      * The replication offset of the master server.
+     * In the case of a master server, this will be the number of bytes written to all replicas.
+     * In the case of a replica server, this will be the number of bytes read from the master.
+     * If the two values are equal, the replica is up to date with the master, otherwise the replica missed some data.
      */
     masterReplOffset: number,
 
@@ -141,8 +144,16 @@ export default class ServerInfo {
      * Sets the master replication offset.
      * @param offset - The master replication offset to set.
      */
-    public setMasterReploffset(offset: number) {
+    public setMasterReplOffset(offset: number) {
         this.replication.masterReplOffset = offset;
+    }
+
+    /**
+     * Increments the master replication offset by num bytes.
+     * @param num - The number of bytes to increment the offset by.
+     */
+    public incrementMasterReplOffset(num: number) {
+        this.replication.masterReplOffset += num;
     }
 
     /**
