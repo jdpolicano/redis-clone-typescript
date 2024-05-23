@@ -59,12 +59,12 @@ export default class Server {
         return new Promise((resolve, reject) => {
             this.listener.listen({ port: parseInt(this.port) });
       
-            this.listener.on("connection", async (connection) => {
+            this.listener.on("connection", async (socket) => {
                 const clientInfo = new ClientInfo();
-                const link = new AsyncLink(new Connection(connection));
+                const connection = new Connection(socket);
 
                 const handler = new Handler({
-                    connection: link,
+                    connection,
                     db: this.db,
                     serverInfo: this.serverInfo,
                     clientInfo,
@@ -114,9 +114,10 @@ export default class Server {
             port: parseInt(port)
         });
 
-        const link = new AsyncLink(new Connection(socket));
+        const connection = new Connection(socket);
+
         const replicationHandler = new ReplicationHandler({
-            connection: link,
+            connection,
             db: this.db,
             serverInfo: this.serverInfo,
             clientInfo: new ClientInfo(),
@@ -124,13 +125,12 @@ export default class Server {
         }); 
 
         await replicationHandler.handle();
-        console.log("replicating...");
 
         const clientInfo = new ClientInfo();
         clientInfo.setRole("master");
         // all handlers should be reattached at this point.
         const replicationSession = new Handler({
-            connection: link,
+            connection,
             db: this.db,
             serverInfo: this.serverInfo,
             clientInfo,

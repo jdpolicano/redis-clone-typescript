@@ -3,11 +3,10 @@ import type Database from "../database/database";
 import type ServerInfo from "../serverInfo"; // server info meta data...
 import type ClientInfo from "../clientInfo";
 import type net from "net";
-import AsyncLink from "../asyncLink";
 import ReplicationStream from "../replicationStream";
 
 export interface RequestContext {
-    connection: AsyncLink;
+    connection: Connection;
     db: Database;
     serverInfo: ServerInfo;
     clientInfo: ClientInfo;
@@ -21,7 +20,7 @@ export interface Internals {
 }
 
 export interface HandlerOptions {
-    connection: AsyncLink; 
+    connection: Connection; 
     db: Database;
     serverInfo: ServerInfo;
     clientInfo: ClientInfo;
@@ -52,19 +51,11 @@ export abstract class SocketHandler {
         return this.ctx;
     }
 
-    public cleanup() {
-        this.ctx.connection.cleanup();
-    }
-
     public swapSocket(socket: net.Socket) {
-        this.ctx.connection = new AsyncLink(new Connection(socket));
+        this.ctx.connection = new Connection(socket);
     }
 
     public swapConnection(connection: Connection) {
-        this.ctx.connection = new AsyncLink(connection);
-    }
-
-    public swapLink(link: AsyncLink) {
-        this.ctx.connection = link;
+        this.ctx.connection = connection;
     }
 }

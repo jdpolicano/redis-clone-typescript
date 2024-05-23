@@ -58,7 +58,7 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async checkServerAlive(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["PING"]));
-        const { value } = await this.ctx.connection.readMessage();
+        const { value } = await this.ctx.connection.readResp();
         this.expect(value, RespBuilder.simpleString("PONG"));
         console.log("master is alive");
         return ReplicationState.ServerAlive;
@@ -69,7 +69,7 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async notifyListeningPort(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["REPLCONF", "listening-port", this.ctx.serverInfo.getPort()]));
-        const { value } = await this.ctx.connection.readMessage();
+        const { value } = await this.ctx.connection.readResp();
         this.expect(value, RespBuilder.simpleString("OK"));
         console.log("sent listening port")
         return ReplicationState.SentListeningPort;
@@ -80,7 +80,7 @@ export default class ReplicationHandler extends SocketHandler {
      */
     public async notifyCapabilities(): Promise<ReplicationState> {
         this.ctx.connection.writeResp(RespBuilder.bulkStringArray(["REPLCONF", "capa", "psync2"]));
-        const { value } = await this.ctx.connection.readMessage();
+        const { value } = await this.ctx.connection.readResp();
         this.expect(value, RespBuilder.simpleString("OK"));
         console.log("sent capabilities");
         return ReplicationState.SentCapabilities;
@@ -95,12 +95,8 @@ export default class ReplicationHandler extends SocketHandler {
              this.ctx.serverInfo.getMasterReplid(),
              this.ctx.serverInfo.getMasterReplOffset().toString()
         ]));
-        const { value } = await this.ctx.connection.readMessage();
-
-        console.log("setting mode to rdb read...");
-        this.ctx.connection.setRDMode();
-        const rdbfile = await this.ctx.connection.readRawMessage();
-        this.ctx.connection.setRespMode();
+        const { value } = await this.ctx.connection.readResp();
+        const rdbfile = await this.ctx.connection.readRdbFile();
         console.log("received RDB file: ", rdbfile);
 
         this.expectType(value, RespType.SimpleString);

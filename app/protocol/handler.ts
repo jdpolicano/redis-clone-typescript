@@ -12,10 +12,15 @@ import Info from "../commands/info"; // info command
 import Replconf from "../commands/replconf"; // replconf command
 import Psync from "../commands/psync"; // psync command
 import { Transaction } from "../commands/base";
-import { SocketHandler, type HandlerOptions } from "./base";
-import type { Message } from "../connection";
+import {
+    SocketHandler,
+    type HandlerOptions
+} from "./base";
 import Replica from "../replica";
+import type { ParseSuccess } from "../../interfaces/parser";
 
+
+type Message = ParseSuccess<RespValue>;
 
 /**
  * Represents a Handler class that handles incoming messages and executes commands.
@@ -37,7 +42,7 @@ export default class Handler extends SocketHandler {
     public async handle() {
         while (!this.shouldExit) {
             try {
-                const message = await this.ctx.connection.readMessage();
+                const message = await this.ctx.connection.readResp();
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {

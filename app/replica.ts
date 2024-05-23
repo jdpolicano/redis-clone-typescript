@@ -1,9 +1,9 @@
-import AsyncLink from "./asyncLink";
+import Connection from "./connection";
 
 export default class Replica {
-    connection: AsyncLink;
+    connection: Connection;
 
-    constructor(connection: AsyncLink) {
+    constructor(connection: Connection) {
         this.connection = connection;
     }
     
