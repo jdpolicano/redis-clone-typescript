@@ -8,12 +8,10 @@ import {
     RespArray,
 } from "./types";
 
-export interface ParseResult {
-    value?: RespValue, // the parsed value as a RespValue
-    source: Buffer, // the source that was parsed;
-}
+import type { Parser, ParseResult } from "../../interfaces/parser";
 
-export default class RespParser {
+
+export default class RespParser implements Parser<RespValue> {
     private parseIndex: number;
 
     constructor() {
@@ -23,10 +21,10 @@ export default class RespParser {
      * Reads the next message from the buffer. It will return an error in the case the message is malformed. 
      * It will return null if there are no more messages to read or if the message is incomplete.
      */
-    public parse(data: Buffer): ParseResult {
+    public parse(data: Buffer): ParseResult<RespValue> {
         if (data.length === 0) {
             return {
-                source: data
+                ok: false
             }
         }
 
@@ -52,13 +50,14 @@ export default class RespParser {
 
         if (result === null) {
             return {
-                source: data
+                ok: false
             };
         };
 
         return {
             value: result,
-            source: data.subarray(0, this.parseIndex)
+            source: data.subarray(0, this.parseIndex),
+            ok: true
         }; // return the result
     }
 
@@ -145,7 +144,7 @@ export default class RespParser {
         for (let i = 0; i < count; i++) {
             const item = this.parse(data);
 
-            if (!item.value) {
+            if (!item.ok) {
                 return null;
             }
 

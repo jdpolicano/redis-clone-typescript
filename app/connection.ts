@@ -8,6 +8,8 @@ export interface Message {
     value: RespValue,
     source: Buffer
 }
+
+export type TranslationMode = "resp" | "rdb";
 /**
  * A connection struct representing a wrapper on a tcp net socket.
  * 
@@ -32,12 +34,14 @@ export default class Connection extends EventEmitter {
      * If  `false`, the connection will emit the raw buffer data to a separate event "rawMessage"
      */
     private shouldTranslate: boolean;
+    private mode: TranslationMode;
 
     constructor(socket: net.Socket) {
         super();
         this.socket = socket; 
         this.buffer = Buffer.alloc(0);
         this.shouldTranslate = true;
+        this.mode = "resp";
         this.wireSocket(); // wire the sockets events to this instance. 
     }
 
@@ -76,39 +80,36 @@ export default class Connection extends EventEmitter {
     }
 
     public setRespMode() {
+        this.mode = "resp";
+        this.shouldTranslate = true;
+    }
+
+    public setRDMode() {
+        this.mode = "rdb";
         this.shouldTranslate = true;
     }
 
     public isRawMode() {
-        return !this.shouldTranslate;
+        return !this.shouldTranslate || this.mode === "rdb";
+    }
+
+    public isRespMode() {
+        return this.mode === "resp";
+    }
+
+    public isRDBMode() {
+        return this.mode === "rdb";
     }
 
     private wireSocket() {
         this.socket.on("data", (data) => {
-            if (!this.shouldTranslate) {
-                this.emit("rawMessage", Buffer.concat([this.buffer, data]));
-                this.buffer = Buffer.alloc(0);
-                return;
-            };
-
+            console.log(`data: ${data}\nMode: ${this.mode}`);
             this.buffer = Buffer.concat([this.buffer, data]);
-            const parser = new RespParser();
-            
-            try {
-                const { value, source } = parser.parse(this.buffer);
-               
-                if (value !== undefined) {
-                    this.emit("message", { value, source });
-                }
 
-                if (source.length === this.buffer.length) {
-                    this.buffer = Buffer.alloc(0);
-                } else {
-                    this.buffer = this.buffer.subarray(this.buffer.length - source.length);
-                }
-            } catch (e) {
-                this.emit("error", e);
-                this.emit("close");
+            if (this.isRespMode()) {
+                this.parseResp();
+            } else if (this.isRDBMode()) {
+                this.parseRDB();
             }
         });
 
@@ -121,7 +122,93 @@ export default class Connection extends EventEmitter {
         });
     }
 
+    private parseResp() {
+        const parser = new RespParser(); 
+        try {
+            const { value, source } = parser.parse(this.buffer);
+            if (value) {
+                this.emit("message", { value, source });
+                this.removeParsedSource(source);
+            }
+        } catch (e) {
+            this.emitErrorAndClose(e);
+        }
+    }
+
+    private parseRDB() {
+        const parser = new RDBFileParser();
+        try {
+            const { value, source } = parser.parse(this.buffer);
+            console.log("RECEIVED AND RDB FILE!!!", value);
+            this.emit("rawMessage", value);
+            this.removeParsedSource(source);
+        } catch (e) {
+            console.log(e);
+            // ignore for now...
+        }
+    }
+
+    private removeParsedSource(source: Buffer) {
+        if (source.length === this.buffer.length) {
+            this.buffer = Buffer.alloc(0);
+        } else {
+            this.buffer = this.buffer.subarray(this.buffer.length - source.length);
+        }
+    }
+    
+    private emitErrorAndClose(e: Error) {
+        this.emit("error", e);
+        this.emit("close");
+    }
+
     public cleanup() {
         this.socket.removeAllListeners();
+    }
+}
+
+
+class RDBFileParser {
+    private parseIdx: number
+    
+    constructor() {
+        this.parseIdx = 0;
+    }
+
+    // $<length_of_file>\r\n<contents_of_file>
+    public parse(data: Buffer): { value: Buffer, source: Buffer } {
+        this.expectByte(data, "$".charCodeAt(0));
+        const length = this.readUntil(data, "\r\n");
+        if (length === null) {
+            throw new Error("Invalid RDB file");
+        }
+        console.log("LENGTH: ", length.toString("utf-8"))
+        const lengthInt = parseInt(length.toString("utf-8"));
+        if (isNaN(lengthInt) || data.length < this.parseIdx + lengthInt + 2) {
+            console.log("data length: ", data.length, "parseIdx: ", this.parseIdx, "lengthInt: ", lengthInt);
+            console.log("data: ", data);
+        }
+        const body = data.subarray(this.parseIdx, this.parseIdx + lengthInt);
+        return {
+            value: body,
+            source: data.subarray(0, this.parseIdx)
+        }
+    }
+
+    private readUntil(data: Buffer, delimiter: string): Buffer | null {
+        let targetIdx = data.indexOf(delimiter, this.parseIdx);
+
+        if (targetIdx === -1) {
+            return null;
+        }
+
+        const result = data.subarray(this.parseIdx, targetIdx);
+        this.parseIdx = targetIdx + delimiter.length;
+        return result;
+    }
+
+    private expectByte(data: Buffer, byte: number) {
+        if (data[this.parseIdx++] !== byte) {
+            throw new Error("Unexpected byte");
+        };
     }
 }

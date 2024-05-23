@@ -192,4 +192,18 @@ export default class ServerInfo {
     public getPort(): string {
         return this.serverConfig.port;
     }
+
+    /**
+     * Tells if the server is a slave/
+     */
+    public isSlave(): boolean {
+        return this.replication.role === "slave";
+    }
+
+    /**
+     * Tells if the server is a master.
+     */
+    public isMaster(): boolean {
+        return this.replication.role === "master";
+    }
 }

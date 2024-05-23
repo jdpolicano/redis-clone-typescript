@@ -47,4 +47,25 @@ export default class ClientInfo {
     public addSessionHistory(session: RespValue[]) {
         this.clientMeta.sessionHistory.push(session);
     }
+
+    /**
+     * Tells whether the client is a replica.
+     */
+    public isReplica(): boolean {
+        return this.clientMeta.type === "replica";
+    }
+
+    /**
+     * Tells whether the client is a master.
+     */
+    public isMaster(): boolean {
+        return this.clientMeta.type === "master";
+    }
+
+    /**
+     * Tells whether the client is a standard client.
+     */
+    public isStandard(): boolean {
+        return this.clientMeta.type === "standard";
+    }
 }

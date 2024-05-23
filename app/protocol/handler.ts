@@ -15,7 +15,6 @@ import { Transaction } from "../commands/base";
 import { SocketHandler, type HandlerOptions } from "./base";
 import type { Message } from "../connection";
 import Replica from "../replica";
-import AsyncLink from "../asyncLink";
 
 
 /**

@@ -1,4 +1,4 @@
-import { RespType, type RespValue } from "../resp/types";
+import type { RespValue } from "../resp/types";
 import type { RequestContext } from "../protocol/base";
 
 /**

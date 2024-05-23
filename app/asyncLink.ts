@@ -134,6 +134,13 @@ export default class AsyncLink {
     }
 
     /**
+     * Sets the connection to RDB mode.
+     */
+    public setRDMode() {
+        this.connection.setRDMode();
+    }
+
+    /**
      * Returns an async generator that yields the next message.
      * @returns An async generator that yields the next message.
      */

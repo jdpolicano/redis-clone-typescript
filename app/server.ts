@@ -60,9 +60,9 @@ export default class Server {
             this.listener.listen({ port: parseInt(this.port) });
       
             this.listener.on("connection", async (connection) => {
-                // will be used to keep track of replicas...
                 const clientInfo = new ClientInfo();
                 const link = new AsyncLink(new Connection(connection));
+
                 const handler = new Handler({
                     connection: link,
                     db: this.db,
