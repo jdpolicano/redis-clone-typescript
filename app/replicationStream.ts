@@ -46,4 +46,8 @@ export default class ReplicationStream {
     public getBuffer(): Buffer {
         return this.buffer;
     }
+
+    public getReplicas(): Replica[] {
+        return this.connectedReplicas;
+    }
 }

@@ -6,6 +6,8 @@ import ServerInfo from "./serverInfo";
 import ClientInfo from "./clientInfo";
 import ReplicationStream from "./replicationStream";
 import Connection from "./connection";
+import RespBuilder from "./resp/builder";
+import RespEncoder from "./resp/encoder";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -29,6 +31,7 @@ export default class Server {
     private db: Database;
     private serverInfo: ServerInfo;
     private replicationStream: ReplicationStream;
+    private healthCheckInterval?: Timer;
 
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
@@ -44,7 +47,6 @@ export default class Server {
      * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
      */
     public async start(): Promise<void> {
-
         if (this.serverInfo.getRole() === "master") {
             return this.listen();
         } else {
@@ -72,6 +74,10 @@ export default class Server {
                 
                 try {
                     await handler.handle();
+                    // we should start pinging if we are in a replication state now...
+                    if (clientInfo.isReplica() && !this.healthCheckInterval) {
+                        this.setupHealthNotifications();
+                    }
                 } catch (err) {
                     console.log(`[ERR]: ${err.message}`);
                 }
@@ -137,6 +143,15 @@ export default class Server {
         });
 
         return replicationSession.handle();
+    }
+
+    private setupHealthNotifications() {
+        this.healthCheckInterval = setInterval(() => {
+            const message = RespEncoder.encodeResp(
+                RespBuilder.bulkStringArray(["PING"])
+            );
+            this.replicationStream.replicate(Buffer.from(message));
+        }, 1000)
     }
 
     private setupServerInfo(options: ServerOptions) {

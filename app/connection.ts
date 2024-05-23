@@ -43,6 +43,10 @@ export default class Connection {
         this.socket.write(RespEncoder.encodeSimpleError(data), "binary");
     }
 
+    public writeInteger(data: number) {
+        this.socket.write(RespEncoder.encodeInteger(data.toString()), "binary");
+    }
+
     public writeResp(data: RespValue) {
         this.socket.write(RespEncoder.encodeResp(data), "binary");
     }

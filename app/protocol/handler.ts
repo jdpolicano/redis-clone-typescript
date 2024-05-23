@@ -11,6 +11,7 @@ import Get from "../commands/get";
 import Info from "../commands/info"; // info command
 import Replconf from "../commands/replconf"; // replconf command
 import Psync from "../commands/psync"; // psync command
+import Wait from "../commands/wait"; // wait command
 import { Transaction } from "../commands/base";
 import {
     SocketHandler,
@@ -116,6 +117,8 @@ export default class Handler extends SocketHandler {
                 return this.execReplconf(args.slice(1), msg.source);
             case "psync":
                 return this.execPsync(args.slice(1), msg.source);
+            case "wait":
+                return this.execWait(args.slice(1), msg.source);
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -127,7 +130,7 @@ export default class Handler extends SocketHandler {
      */
     private execPing(args: RespBulkString[], source: Buffer) {
         const command = new Ping(this.ctx);
-        
+
         if (this.ctx.clientInfo.getRole() === "master") {
             // todo: the replica should keep track of the state of 
             // this connection somewhere.
@@ -222,6 +225,21 @@ export default class Handler extends SocketHandler {
         try {
             const options = Psync.parseArgs(args);
             const command = new Psync(this.ctx, options);
+            this.handleTransaction(command.execute(), source);
+        } catch (e) {
+            this.ctx.connection.writeString("ERR unable to parse arguments");
+            return;
+        }
+    }
+
+    /**
+     * Executes the "wait" command.
+     * @param args - The arguments for the command.
+     */
+    private execWait(args: RespBulkString[], source: Buffer) {
+        try {
+            const options = Wait.parseWaitOptions(args);
+            const command = new Wait(this.ctx, options);
             this.handleTransaction(command.execute(), source);
         } catch (e) {
             this.ctx.connection.writeString("ERR unable to parse arguments");
