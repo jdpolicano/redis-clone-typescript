@@ -45,6 +45,9 @@ export default class Handler extends SocketHandler {
         while (!this.shouldExit) {
             try {
                 const message = await this.ctx.connection.readResp();
+                if (this.ctx.serverInfo.isSlave()) {
+                    console.log(JSON.stringify(message));
+                }
                 this.handleMessage(message);
                 // console.log(this.ctx.connection);
             } catch (e) {
@@ -64,14 +67,14 @@ export default class Handler extends SocketHandler {
      * @param message - The message to handle.
      */
     private async handleMessage(message: Message) {
-        this.execCommand(message);
+        await this.execCommand(message);
     }
 
     /**
      * Executes a command based on the command name.
      * @param args - The arguments for the command.
      */
-    private execCommand(msg: Message) {
+    private async execCommand(msg: Message) {
         const msgArray = msg.value; 
 
         if (!this.validateIsArray(msgArray)) {
@@ -86,13 +89,8 @@ export default class Handler extends SocketHandler {
             return;
         }
 
-        const commandName = args[0].value;
-
-        if (!commandName) {
-            this.ctx.connection.writeError("ERR expected command name");
-            return;
-        }
-
+        // validateArrayContents guarantees that args is a RespBulkString[] and non 0 length
+        const commandName = args[0].value as string;
         return this.routeCommand(commandName, args, msg);
     }
 
@@ -101,7 +99,7 @@ export default class Handler extends SocketHandler {
      * @param commandName - The name of the command.
      * @param args - The arguments for the command.
      */
-    private routeCommand(commandName: string, args: RespBulkString[], msg: Message) {
+    private async routeCommand(commandName: string, args: RespBulkString[], msg: Message) {
         switch (commandName.toString().toLowerCase()) {
             case "ping": 
                 return this.execPing(args.slice(1), msg.source);
@@ -236,11 +234,11 @@ export default class Handler extends SocketHandler {
      * Executes the "wait" command.
      * @param args - The arguments for the command.
      */
-    private execWait(args: RespBulkString[], source: Buffer) {
+    private async execWait(args: RespBulkString[], source: Buffer) {
         try {
             const options = Wait.parseWaitOptions(args);
             const command = new Wait(this.ctx, options);
-            this.handleTransaction(command.execute(), source);
+            this.handleTransaction(await command.execute(), source);
         } catch (e) {
             this.ctx.connection.writeString("ERR unable to parse arguments");
             return;
@@ -260,6 +258,7 @@ export default class Handler extends SocketHandler {
             const replica = new Replica(this.ctx.connection);
             this.ctx.replicationStream.addReplica(replica);
             this.shouldExit = true;
+            return; 
         }
 
         if (this.ctx.serverInfo.getRole() === "master") {
@@ -280,7 +279,6 @@ export default class Handler extends SocketHandler {
         if (t === Transaction.Write) {
             this.ctx.replicationStream.replicate(source);
         }
-
         this.ctx.serverInfo.incrementMasterReplOffset(source.length);
     }
 

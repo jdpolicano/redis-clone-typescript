@@ -14,6 +14,9 @@ export enum ReadError {
     EMALFORMED = "ERR malformed data",
 }
 
+/**
+ * Represents a connection to a Redis server.
+ */
 export default class Connection {
     private socket: net.Socket;
     private buffer: Buffer;
@@ -22,6 +25,10 @@ export default class Connection {
     private promise: Promise<unknown>;
     private is_closed: boolean;
 
+    /**
+     * Creates a new Connection instance.
+     * @param socket - The underlying socket for the connection.
+     */
     constructor(socket: net.Socket) {
         this.socket = socket; 
         this.buffer = Buffer.alloc(0);
@@ -35,34 +42,69 @@ export default class Connection {
         this.wireSocket(); // wire the sockets events to this instance. 
     }
 
+    /**
+     * Writes a string to the socket.
+     * @param data - The string to write.
+     */
     public writeString(data: string) {
         this.socket.write(RespEncoder.encodeSimpleString(data), "binary");
     }
 
+    /**
+     * Writes an error message to the socket.
+     * @param data - The error message to write.
+     */
     public writeError(data: string) {
         this.socket.write(RespEncoder.encodeSimpleError(data), "binary");
     }
 
+    /**
+     * Writes an integer to the socket.
+     * @param data - The integer to write.
+     */
     public writeInteger(data: number) {
         this.socket.write(RespEncoder.encodeInteger(data.toString()), "binary");
     }
 
+    /**
+     * Writes a RESP value to the socket.
+     * @param data - The RESP value to write.
+     */
     public writeResp(data: RespValue) {
         this.socket.write(RespEncoder.encodeResp(data), "binary");
     }
 
+    /**
+     * Writes data to the socket.
+     * @param data - The data to write.
+     * @param encoding - The encoding to use.
+     */
     public write(data: string | Uint8Array, encoding?: BufferEncoding) {
         this.socket.write(data, encoding);
     }
 
+    /**
+     * Reads a RESP value from the socket.
+     * @returns A promise that resolves to the parsed RESP value.
+     */
     public readResp(): Promise<ParseSuccess<RespValue>> {
         return this.read(new RespParser());
     }
 
+    /**
+     * Reads an RDB file from the socket.
+     * @returns A promise that resolves to the parsed RDB file.
+     */
     public readRdbFile(): Promise<ParseSuccess<Buffer>> {
         return this.read(new RDBFileParser());
     }
 
+    /**
+     * A generic read function that reads from the buffer and attempts to parse it.
+     * It takes a parser instance and attempts to parse the buffer with it.
+     * @param parser - a parser instance to attempt parsing the buffer with. 
+     * @returns - a promise that resolves to the parsed value.
+     */
     private async read<T>(parser: Parser<T>): Promise<ParseSuccess<T>> {
         if (this.is_closed) {
             throw new Error(ReadError.EREADDEAD);
@@ -100,6 +142,9 @@ export default class Connection {
         throw new Error("ERR maximum retries reached");
     }
 
+    /**
+     * Wires the socket events to this instance.
+     */
     private wireSocket() {
         this.socket.on("data", (data) => {
             this.buffer = Buffer.concat([this.buffer, data]);

@@ -2,7 +2,7 @@ import Server from "./server";
 import util from "util";
 
 const args = util.parseArgs({
-    args: Bun.argv,
+    args: process.argv,
     options: {
         port: {
             type: "string",
@@ -14,6 +14,7 @@ const args = util.parseArgs({
             type: "string"
         }
     },
+
     allowPositionals: true
 });
 

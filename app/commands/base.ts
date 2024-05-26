@@ -1,4 +1,4 @@
-import type { RespValue } from "../resp/types";
+import type {RespValue } from "../resp/types";
 import type { RequestContext } from "../protocol/base";
 
 /**
@@ -26,7 +26,7 @@ export default abstract class Command {
         this.ctx = ctx;
     }
     
-    abstract execute(message: RespValue): Transaction;
+    abstract execute(message: RespValue): Transaction | Promise<Transaction>;
 
     public setReply(shouldReply: boolean) {
         this.shouldReply = shouldReply;

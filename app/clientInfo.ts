@@ -1,4 +1,3 @@
-import type { RespValue } from "./resp/types";
 export type ClientType = "replica" | "standard" | "master";
 
 /**
@@ -7,7 +6,6 @@ export type ClientType = "replica" | "standard" | "master";
 export interface ClientMeta {
     connectionStart: number;
     type: ClientType;
-    sessionHistory: RespValue[][];
 }
 
 /**
@@ -20,7 +18,6 @@ export default class ClientInfo {
         this.clientMeta = {
             connectionStart: Date.now(),
             type: "standard",
-            sessionHistory: [],
         };
     }
 
@@ -38,14 +35,6 @@ export default class ClientInfo {
      */
     public getRole(): ClientType {
         return this.clientMeta.type;
-    }
-
-    /**
-     * Adds a session to the session history of the client.
-     * @param session The session to be added.
-     */
-    public addSessionHistory(session: RespValue[]) {
-        this.clientMeta.sessionHistory.push(session);
     }
 
     /**

@@ -32,10 +32,6 @@ export default class ReplicationHandler extends SocketHandler {
      * Basic state machine for handling replication.
      */
     public async negotiate() {
-        if (this.state === ReplicationState.Error) {
-            throw new Error("Error occurred during replication negotiation.");
-        }
-
         if (this.state === ReplicationState.Start) {
             this.state = await this.checkServerAlive();
         }
@@ -50,6 +46,10 @@ export default class ReplicationHandler extends SocketHandler {
 
         if (this.state === ReplicationState.SentCapabilities) {
             this.state = await this.psync();
+        }
+
+        if (this.state === ReplicationState.Error) {
+            throw new Error("Error occurred during replication negotiation.");
         }
     }
 
@@ -100,7 +100,6 @@ export default class ReplicationHandler extends SocketHandler {
         const [id, offset] = this.processPsyncResponse(value.value as string); // expectType confirmed this is a string
         this.ctx.serverInfo.setMasterReplid(id);
         this.ctx.serverInfo.setMasterReplOffset(offset);
-
         // read the RDB file - todo: implement this
         const rdbfile = await this.ctx.connection.readRdbFile();
         return ReplicationState.SentPsync;

@@ -22,29 +22,72 @@ export interface ServerOptions {
     replicaof?: string
 }
 
+/**
+ * Represents a Redis server.
+ */
 export default class Server {
+    /**
+     * The server listener.
+     */
     private listener: net.Server;
+
+    /**
+     * The port the server is listening on.
+     */
     private port: string;
+
+    /**
+     * The host the server is listening on.
+     */
     private host: Host;
+
+    /**
+     * The exit status of the server.
+     */
     private exitStatus: ExitStatus;
+
+    /**
+     * The error that caused the server to exit.
+     */
     private error?: Error; 
+
+    /**
+     * The database instance.
+     */
     private db: Database;
+
+    /**
+     * The server information. Contains the role of the server, the host,the port, as well as replication information.
+     */
     private serverInfo: ServerInfo;
+
+    /**
+     * The replication stream. Contains references to all open replicaiton connections and a buffer of commands to replicate.
+     */
     private replicationStream: ReplicationStream;
+
+    /**
+     * The health check interval for replica servers. Runs one a second. 
+     */
     private healthCheckInterval?: Timer;
 
+    /**
+     * Creates a new instance of the Server class.
+     * @param options - The server options.
+     */
     constructor(options: ServerOptions = {}) {
         this.listener = new net.Server();
         this.host = "127.0.0.1";
         this.port = options.port ? options.port : "6379";
-        this.exitStatus = ExitStatus.Graceful
+        this.exitStatus = ExitStatus.Graceful;
         this.db = new Database();
         this.replicationStream = new ReplicationStream();
         this.setupServerInfo(options);
     }
 
     /**
-     * Sets up the connection to the socket and begins routing incomming connections to the appropriate handler.
+     * Sets up the connection to the socket and begins routing incoming connections to the appropriate handler.
+     * @returns A promise that resolves when the server has started.
      */
     public async start(): Promise<void> {
         if (this.serverInfo.getRole() === "master") {
@@ -56,6 +99,10 @@ export default class Server {
         }
     }
 
+    /**
+     * Starts listening for incoming connections on the specified port.
+     * @returns A promise that resolves when the server has started listening.
+     */
     private listen(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.listener.listen({ port: parseInt(this.port) });
@@ -76,7 +123,7 @@ export default class Server {
                     await handler.handle();
                     // we should start pinging if we are in a replication state now...
                     if (clientInfo.isReplica() && !this.healthCheckInterval) {
-                        this.setupHealthNotifications();
+                        // this.setupHealthNotifications();
                     }
                 } catch (err) {
                     console.log(`[ERR]: ${err.message}`);
@@ -97,7 +144,6 @@ export default class Server {
 
             this.listener.on("close", () => {
                 if (this.exitStatus === ExitStatus.Error) {
-                    this.printErr();
                     return reject();
                 }
                 console.log("Server closed")
@@ -111,6 +157,10 @@ export default class Server {
         })
     }
 
+    /**
+     * Negotiates replication with the master server.
+     * @returns A promise that resolves when the replication is complete.
+     */
     private async negotiateReplication(): Promise<void> {
         const [host, port] = this.serverInfo.getMasterAddressParts();
         // connect to the master and send a ping request.
@@ -145,6 +195,9 @@ export default class Server {
         return replicationSession.handle();
     }
 
+    /**
+     * Sets up health notifications for replica servers.
+     */
     private setupHealthNotifications() {
         this.healthCheckInterval = setInterval(() => {
             const message = RespEncoder.encodeResp(
@@ -154,6 +207,10 @@ export default class Server {
         }, 1000)
     }
 
+    /**
+     * Sets up the server information based on the provided options.
+     * @param options - The server options.
+     */
     private setupServerInfo(options: ServerOptions) {
         if (options.replicaof) {
             const [host, port] = options.replicaof.split(" ");
@@ -192,7 +249,8 @@ export default class Server {
     }
 
     /**
-     * @returns the address of the server as a full string.
+     * Gets the address of the server as a full string.
+     * @returns The server's port.
      */
     getServerPort(): string {
         return this.port;
