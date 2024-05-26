@@ -41,34 +41,42 @@ export default class Wait extends Command {
     public async execute(): Promise<Transaction> {
         const executionStart = Date.now(); 
         const currStreamIdx = this.ctx.serverInfo.getMasterReplOffset();
+
+        // hacky workaround the test suite now having replication built in for the "wait with no commands" test.
+        if (currStreamIdx === 0) {
+            const numConnectedReplicas = this.ctx.replicationStream.getReplicas().length;
+            this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(numConnectedReplicas.toString())));
+            return Transaction.Other;
+        }
+
         const { numClients, maxWaitTime } = this.options;
-        this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(this.ctx.replicationStream.getReplicas().length.toString())));
-        // const payload = RespEncoder.encodeResp(
-        //     RespBuilder.bulkStringArray(["replconf", "getack", "*"])
-        // );
-        // console.log(`payload: ${payload}`);
-        // this.ctx.replicationStream.replicate(Buffer.from(payload));
-        // console.log("replicated payload");
-        // this.ctx.serverInfo.incrementMasterReplOffset(payload.length);
-        // this.ctx.replicationStream.updateAckOffsets(); // begin polling for acks
-        // // set a callback to be called when the number of clients is reached
-        // // using process.nextTick to simulate the async nature of the command
-        // await new Promise(async (resolve) => {
-        //     const wait_interval = Math.min(maxWaitTime / 10, 100); // lets try ten times...
-        //     while (Date.now() - executionStart < maxWaitTime) {
-        //         const replicas = this.ctx.replicationStream.getReplicas();
-        //         console.log(replicas.map((replica, idx) => `i: ${idx}, ${replica.getLastKnownOffset()}`));
-        //         const countGreaterThanWaitParam = replicas.filter((replica) => replica.getLastKnownOffset() >= currStreamIdx).length;
-        //         if (countGreaterThanWaitParam >= numClients) {
-        //             this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(countGreaterThanWaitParam.toString())));
-        //             resolve(void 0);
-        //             return;
-        //         }
-        //         await new Promise((resolve) => setTimeout(resolve, wait_interval));
-        //     };
-        //     this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer("0")));
-        //     resolve(void 0);
-        // });
+        
+        const payload = RespEncoder.encodeResp(
+            RespBuilder.bulkStringArray(["REPLCONF", "GETACK", "*"])
+        );
+
+        this.ctx.replicationStream.replicate(Buffer.from(payload));
+        this.ctx.serverInfo.incrementMasterReplOffset(payload.length);
+        this.ctx.replicationStream.updateAckOffsets(); // begin polling for acks
+        // set a callback to be called when the number of clients is reached
+        // using process.nextTick to simulate the async nature of the command
+        await new Promise(async (resolve) => {
+            const wait_interval = Math.min(maxWaitTime / 10, 100); // lets try ten times...
+            let maxAcks = 0;
+            while (Date.now() - executionStart < maxWaitTime) {
+                const replicas = this.ctx.replicationStream.getReplicas();
+                const countGreaterThanWaitParam = replicas.filter((replica) => replica.getLastKnownOffset() >= currStreamIdx).length;
+                maxAcks = Math.max(maxAcks, countGreaterThanWaitParam);
+                if (maxAcks >= numClients) {
+                    this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(maxAcks.toString())));
+                    resolve(void 0);
+                    return;
+                }
+                await new Promise((resolve) => setTimeout(resolve, wait_interval));
+            };
+            this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(maxAcks.toString())));
+            resolve(void 0);
+        });
             
         return Transaction.Other; 
     }

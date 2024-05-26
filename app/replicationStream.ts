@@ -58,7 +58,7 @@ export default class ReplicationStream {
                 const offset = data.value.pop()!;
                 const ack = data.value.pop()!;
                 const cmdName = data.value.pop()!;
-                if (cmdName.value === "REPLCONF" && ack.value === "ACK" && offset.value !== null) {
+                if (cmdName.value?.toLowerCase() === "replconf" && ack.value?.toLowerCase() === "ack" && offset.value !== null) {
                     return parseInt(offset.value);
                 }
             }
