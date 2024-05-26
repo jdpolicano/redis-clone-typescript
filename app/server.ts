@@ -19,7 +19,9 @@ export enum ExitStatus {
 // options
 export interface ServerOptions {
     port?: string,
-    replicaof?: string
+    replicaof?: string,
+    dir?: string
+    dbfilename?: string
 }
 
 /**
@@ -40,6 +42,16 @@ export default class Server {
      * The host the server is listening on.
      */
     private host: Host;
+
+    /**
+     * the directory to store rdb files
+     */
+    private dir: string;
+
+    /**
+     * The rdb file name
+     */
+    private dbfilename: string;
 
     /**
      * The exit status of the server.
@@ -79,6 +91,8 @@ export default class Server {
         this.listener = new net.Server();
         this.host = "127.0.0.1";
         this.port = options.port ? options.port : "6379";
+        this.dir = options.dir ? options.dir : "./tmp/redis-files";
+        this.dbfilename = options.dbfilename ? options.dbfilename : "dump.rdb";
         this.exitStatus = ExitStatus.Graceful;
         this.db = new Database();
         this.replicationStream = new ReplicationStream();
@@ -203,7 +217,7 @@ export default class Server {
             const message = RespEncoder.encodeResp(
                 RespBuilder.bulkStringArray(["PING"])
             );
-            this.replicationStream.replicate(Buffer.from(message));
+            this.replicationStream.replicate(Buffer.from(message), this.serverInfo);
         }, 1000)
     }
 
@@ -227,7 +241,9 @@ export default class Server {
                 },
 
                 config: {
-                    port: this.port
+                    port: this.port,
+                    dir: this.dir,
+                    dbfilename: this.dbfilename
                 }
             });
 
@@ -240,7 +256,9 @@ export default class Server {
                 },
 
                 config: {
-                    port: this.port
+                    port: this.port,
+                    dir: this.dir,
+                    dbfilename: this.dbfilename
                 }
             
             });

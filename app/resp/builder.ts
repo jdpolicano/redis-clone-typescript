@@ -36,7 +36,7 @@ export default class RespBuilder {
         }
     }
 
-    static bulkStringArray(value: string[] | null): resp.RespArray {
+    static bulkStringArray(value: (string | null)[] | null): resp.RespArray {
         return {
             type: resp.RespType.Array,
             value: value?.map((v) => this.bulkString(v)) || null

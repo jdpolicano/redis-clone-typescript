@@ -1,5 +1,6 @@
 import Replica from './replica';
 import { RespBulkString, RespType, RespValue } from './resp/types';
+import type ServerInfo from './serverInfo';
 
 export default class ReplicationStream {
     private buffer: Buffer;
@@ -17,21 +18,20 @@ export default class ReplicationStream {
         this.connectedReplicas.push(replica);
     }
 
-    public replicate(data: Buffer) {
+    public replicate(data: Buffer, serverInfo: ServerInfo) {
         if (this.idx + data.length >= this.MAX_BUFFER_SIZE) {
             console.log("replication stream full");
             this.idx = 0;
         }
         data.copy(this.buffer, this.idx);
         this.propogateToReplicas(this.idx, this.idx + data.length);
+        serverInfo.incrementMasterReplOffset(data.length);
     }
 
-    public async updateAckOffsets() {
+    public updateAckOffsets() {
         for (const replica of this.connectedReplicas) {
-            console.log("polling for acks");
             replica.connection.readResp()
                 .then((message) => {
-                    console.log(`Message: ${message}`);
                     const offset = this.parseAckMessage(message.value);
                     if (offset >= 0) {
                         replica.setLastKnownOffset(offset);
@@ -39,6 +39,8 @@ export default class ReplicationStream {
                 })
                 .catch((e) => {
                     console.error(e);
+                    // todo: an error indicates the connection may have closed.
+                    // need to handle this somehow.
                 });
         }
     }

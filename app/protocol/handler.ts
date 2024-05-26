@@ -12,6 +12,7 @@ import Info from "../commands/info"; // info command
 import Replconf from "../commands/replconf"; // replconf command
 import Psync from "../commands/psync"; // psync command
 import Wait from "../commands/wait"; // wait command
+import Config from "../commands/config"; // config command
 import { Transaction } from "../commands/base";
 import {
     SocketHandler,
@@ -117,6 +118,8 @@ export default class Handler extends SocketHandler {
                 return this.execPsync(args.slice(1), msg.source);
             case "wait":
                 return this.execWait(args.slice(1), msg.source);
+            case "config":
+                return this.execConfig(args.slice(1), msg.source);
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -188,6 +191,7 @@ export default class Handler extends SocketHandler {
         if (this.ctx.serverInfo.getRole() === "slave") {
             command.setReply(false);
         }
+
         this.handleTransaction(command.execute(), source);
     }
 
@@ -246,6 +250,21 @@ export default class Handler extends SocketHandler {
     }
 
     /**
+     * Executes the "config" command.
+     * @param args - The arguments for the command.
+     */
+    private execConfig(args: RespBulkString[], source: Buffer) {
+        try {
+            const options = Config.parseConfigArgs(args);
+            const command = new Config(this.ctx, options);
+            this.handleTransaction(command.execute(), source);
+        } catch (e) {
+            this.ctx.connection.writeString(e.message);
+            return;
+        }
+    }
+
+    /**
      * Handles a transaction.
      * @param t - The transaction to handle.
      */
@@ -270,15 +289,17 @@ export default class Handler extends SocketHandler {
 
     private masterTransaction(t: Transaction, source: Buffer) {
         if (t === Transaction.Write) {
-            this.ctx.replicationStream.replicate(source);
-            this.ctx.serverInfo.incrementMasterReplOffset(source.length);
+            this.ctx.replicationStream.replicate(source, this.ctx.serverInfo);
         }
     }
 
     private slaveTransaction(t: Transaction, source: Buffer) {
+        // unclear if we should be replicating the message...
         if (t === Transaction.Write) {
-            this.ctx.replicationStream.replicate(source);
+            this.ctx.replicationStream.replicate(source, this.ctx.serverInfo);
+            return;
         }
+        // slaves shoud increment regardless of the transaction type.
         this.ctx.serverInfo.incrementMasterReplOffset(source.length);
     }
 

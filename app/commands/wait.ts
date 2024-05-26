@@ -42,7 +42,7 @@ export default class Wait extends Command {
         const executionStart = Date.now(); 
         const currStreamIdx = this.ctx.serverInfo.getMasterReplOffset();
 
-        // hacky workaround the test suite now having replication built in for the "wait with no commands" test.
+        // hacky workaround the test suite not seeming to have replication built in for the "wait with no commands" test.
         if (currStreamIdx === 0) {
             const numConnectedReplicas = this.ctx.replicationStream.getReplicas().length;
             this.reply(() => this.ctx.connection.writeResp(RespBuilder.integer(numConnectedReplicas.toString())));
@@ -55,13 +55,11 @@ export default class Wait extends Command {
             RespBuilder.bulkStringArray(["REPLCONF", "GETACK", "*"])
         );
 
-        this.ctx.replicationStream.replicate(Buffer.from(payload));
-        this.ctx.serverInfo.incrementMasterReplOffset(payload.length);
+        this.ctx.replicationStream.replicate(Buffer.from(payload), this.ctx.serverInfo);
         this.ctx.replicationStream.updateAckOffsets(); // begin polling for acks
-        // set a callback to be called when the number of clients is reached
-        // using process.nextTick to simulate the async nature of the command
+        // wait for the acks to get updated to the current offset.
         await new Promise(async (resolve) => {
-            const wait_interval = Math.min(maxWaitTime / 10, 100); // lets try ten times...
+            const wait_interval = Math.min(maxWaitTime / 10, 100); // lets try ten times or a max of every 100ms
             let maxAcks = 0;
             while (Date.now() - executionStart < maxWaitTime) {
                 const replicas = this.ctx.replicationStream.getReplicas();

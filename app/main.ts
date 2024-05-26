@@ -12,6 +12,16 @@ const args = util.parseArgs({
 
         replicaof: {
             type: "string"
+        },
+
+        dir: {
+            type: "string",
+            default: "./tmp/redis-files"
+        },
+
+        dbfilename: {
+            type: "string",
+            default: "dump.rdb"
         }
     },
 

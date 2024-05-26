@@ -38,6 +38,8 @@ export interface ReplicationInfo {
  */
 export interface ServerConfig {
     port: string,
+    dir: string,
+    dbfilename: string
 }
 
 /**
@@ -57,7 +59,9 @@ export interface ServerInfoOptions {
      * The configuration of the server.
      */
     config: {
-        port: string
+        port: string,
+        dir: string,
+        dbfilename: string
     }
 }
 
@@ -216,5 +220,12 @@ export default class ServerInfo {
      */
     public isMaster(): boolean {
         return this.replication.role === "master";
+    }
+
+    /**
+     * Gets an arbitrary key from the server configuration.
+     */
+    public getConfigKey(key: string): string | undefined {
+        return this.serverConfig[key];
     }
 }
