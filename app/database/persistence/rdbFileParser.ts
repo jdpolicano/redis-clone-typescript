@@ -238,6 +238,9 @@ export default class RdbFileParser {
 ;        if (valueType === VALUE_ENCODING.STRING) {
             const value = this.readStringEncoded();
             const asResp = RespBuilder.bulkString(value);
+            if (expiry?.isExpired()) {
+                return;
+            }
             this.db.setWithKey(key, asResp, expiry);
         } else {
             const valueTypeName = Object.keys(VALUE_ENCODING).find(key => VALUE_ENCODING[key] === valueType);
@@ -263,10 +266,9 @@ export default class RdbFileParser {
         console.log(`Expiry timestamp: ${expiryTimestamp}`);
         console.log(`Current Time: ${Date.now()}`);
         console.log(`Diff: ${expiryTimestamp - Date.now()}`);
-        if (expiryTimestamp > Date.now()) {
-            const expiry = new Expiration(expiryTimestamp - Date.now(), "ms");
-            return this.parseEntry(expiry);
-        }
+        const expiry = new Expiration(expiryTimestamp - Date.now(), "ms");
+        return this.parseEntry(expiry);
+        
     }
 
     /**
@@ -279,10 +281,8 @@ export default class RdbFileParser {
         console.log(`Expiry timestamp: ${expiryTimestamp}`);
         console.log(`Current Time: ${Date.now()}`);
         console.log(`Diff: ${expiryTimestamp - BigInt(Date.now())}`);
-        if (expiryTimestamp > BigInt(Date.now())) {
-            const expiry = new Expiration(Number(expiryTimestamp - BigInt(Date.now())), "ms");
-            return this.parseEntry(expiry);
-        }
+        const expiry = new Expiration(Number(expiryTimestamp - BigInt(Date.now())), "ms");
+        return this.parseEntry(expiry);
     }
 
     /**
@@ -359,7 +359,7 @@ export default class RdbFileParser {
         const bytes = this.readExact(n);
         let result = 0;
         for (let i = 0; i < n; i++) {
-            result = result << 8 | bytes[i];
+            result = (result << 8) | bytes[i];
         }
         return result;
     }
