@@ -358,7 +358,7 @@ export default class RdbFileParser {
     private readInt(n: number): number {
         const bytes = this.readExact(n);
         let result = 0;
-        for (let i = 0; i < n; i++) {
+        for (let i = bytes.length - 1; i >= 0; i--) {
             result = (result << 8) | bytes[i];
         }
         return result;
@@ -369,11 +369,9 @@ export default class RdbFileParser {
      */
     private readBigInt(n: number): bigint {
         const bytes = this.readExact(n);
-        let shift = BigInt(0);
         let result = BigInt(0);
-        for (let i = 0; i < n; i++) {
-            result += BigInt(bytes[i]) << shift;
-            shift += BigInt(8);
+        for (let i = bytes.length - 1; i >= 0; i--) {
+            result = (result << BigInt(8)) | BigInt(bytes[i]);
         }
         return result;
     }
