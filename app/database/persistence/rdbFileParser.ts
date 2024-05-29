@@ -271,7 +271,7 @@ export default class RdbFileParser {
     private parseEntryWithExpiryMS() {
         this.advance(1) // skip the opcode
         console.log("encountered ms timestamp, need to handle these...setting without expiry for now.");
-        const expiryTimestamp = this.readInt(8);
+        const expiryTimestamp = this.readBigInt(8);
         console.log("timestamp: ", expiryTimestamp);
         return this.parseEntry();
     }
@@ -355,6 +355,17 @@ export default class RdbFileParser {
         return result;
     }
 
+    /**
+     * Reads in bytes as a big integer.
+     */
+    private readBigInt(n: number): bigint {
+        const bytes = this.readExact(n);
+        let result = BigInt(0);
+        for (let i = 0; i < n; i++) {
+            result = result << BigInt(8) | BigInt(bytes[i]);
+        }
+        return result;
+    }
     /**
      * Reads exactly n bytes from the buffer.
      */
