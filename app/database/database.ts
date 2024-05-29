@@ -10,17 +10,23 @@ export interface DbEntry {
  * Database class to store data in memory.
  */
 export default class Database {
-    private data: Map<string | null, DbEntry>;
+    private data: Map<string, DbEntry>;
     
     constructor() {
         this.data = new Map();
     }
     
     public set(key: RespBulkString, value: RespBulkString, expiration?: Expiration): void {
+        if (!key.value) return;
         this.data.set(key.value, { value, expiration });
+    }
+
+    public setWithKey(key: string, value: RespBulkString, expiration?: Expiration): void {
+        this.data.set(key, { value, expiration });
     }
     
     public get(key: RespBulkString): DbEntry | undefined {
+        if (!key.value) return;
         const dbEntry = this.data.get(key.value);
         if (dbEntry && dbEntry.expiration) {
             if (dbEntry.expiration.isExpired()) {
@@ -34,6 +40,13 @@ export default class Database {
         return dbEntry;
     }
 
+    public del(key: string): void {
+        this.data.delete(key);
+    }
+
+    public getKeys(): string[] {
+        return Array.from(this.data.keys());
+    }
     /**
      * Temporary method to return the RDB file.
      * @returns 
@@ -44,9 +57,5 @@ export default class Database {
             Buffer.from(`$${rdb.length.toString()}\r\n`),
             rdb
         ])
-    }
-    
-    public del(key: string): void {
-        this.data.delete(key);
     }
 }

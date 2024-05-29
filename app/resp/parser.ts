@@ -10,7 +10,6 @@ import {
 
 import type { Parser, ParseResult } from "../../interfaces/parser";
 
-
 export default class RespParser implements Parser<RespValue> {
     private parseIndex: number;
 
@@ -61,7 +60,7 @@ export default class RespParser implements Parser<RespValue> {
         }; // return the result
     }
 
-    private readSimpleString(data: Buffer): RespSimpleString | null {
+    private readSimpleString(data: Buffer): RespValue | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -74,7 +73,7 @@ export default class RespParser implements Parser<RespValue> {
         };
     }
 
-    private readSimpleError(data: Buffer): RespSimpleError | null {
+    private readSimpleError(data: Buffer): RespValue | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -87,7 +86,7 @@ export default class RespParser implements Parser<RespValue> {
         };
     }
 
-    private readInteger(data: Buffer): RespInteger | null {
+    private readInteger(data: Buffer): RespValue | null {
         const value = this.readUntil(data, "\r\n");
 
         if (value === null) {
@@ -100,7 +99,7 @@ export default class RespParser implements Parser<RespValue> {
         };
     }
 
-    private readBulkString(data: Buffer): RespBulkString | null {
+    private readBulkString(data: Buffer): RespValue | null {
         const len = this.readUntil(data, "\r\n");
         
         if (len === null) {
@@ -123,7 +122,7 @@ export default class RespParser implements Parser<RespValue> {
         };
     }
 
-    private readArray(data: Buffer): RespArray | null {
+    private readArray(data: Buffer): RespValue | null {
         const len = this.readUntil(data, "\r\n");
 
         if (len === null) {

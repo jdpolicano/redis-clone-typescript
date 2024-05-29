@@ -11,6 +11,10 @@ export default class Expiration {
         this.timestamp = Date.now();
     }
 
+    public deriveExpiration(date: Date): void {
+        this.ttl = this.timestamp - date.getTime();
+    }
+
     public isExpired(): boolean {
         const diff = Date.now() - this.timestamp;
         if (this.metric === "ms") {

@@ -1,4 +1,6 @@
 import net from "node:net";
+import fs from "node:fs/promises";
+import path from "node:path";
 import Handler from "./protocol/handler";
 import ReplicationHandler from "./protocol/replication";
 import Database from "./database/database";
@@ -8,6 +10,7 @@ import ReplicationStream from "./replicationStream";
 import Connection from "./connection";
 import RespBuilder from "./resp/builder";
 import RespEncoder from "./resp/encoder";
+import RdbFileParser from "./database/persistence/rdbFileParser";
 
 export type Host = "127.0.0.1" | "0.0.0.0"; // ipv4 or ipv6 address.
 
@@ -104,6 +107,7 @@ export default class Server {
      * @returns A promise that resolves when the server has started.
      */
     public async start(): Promise<void> {
+        await this.restoreFromRdb();
         if (this.serverInfo.getRole() === "master") {
             return this.listen();
         } else {
@@ -137,7 +141,7 @@ export default class Server {
                     await handler.handle();
                     // we should start pinging if we are in a replication state now...
                     if (clientInfo.isReplica() && !this.healthCheckInterval) {
-                        // this.setupHealthNotifications();
+                        this.setupHealthNotifications();
                     }
                 } catch (err) {
                     console.log(`[ERR]: ${err.message}`);
@@ -264,6 +268,18 @@ export default class Server {
             });
         }
 
+    }
+
+    /**
+     * restore the database from an rdb file
+     */
+    private async restoreFromRdb(): Promise<void> {
+        const rdbPath = path.join(this.dir, this.dbfilename);
+        if (await fs.exists(rdbPath)) {
+            const file = await fs.readFile(rdbPath);
+            const parser = new RdbFileParser(file, this.db);
+            parser.apply();
+        }
     }
 
     /**

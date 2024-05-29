@@ -13,6 +13,7 @@ import Replconf from "../commands/replconf"; // replconf command
 import Psync from "../commands/psync"; // psync command
 import Wait from "../commands/wait"; // wait command
 import Config from "../commands/config"; // config command
+import Keys from "../commands/keys"; // keys command
 import { Transaction } from "../commands/base";
 import {
     SocketHandler,
@@ -120,6 +121,8 @@ export default class Handler extends SocketHandler {
                 return this.execWait(args.slice(1), msg.source);
             case "config":
                 return this.execConfig(args.slice(1), msg.source);
+            case "keys":
+                return this.execKeys(args.slice(1), msg.source);
             default:
                 this.ctx.connection.writeString("ERR unknown command");
                 return;
@@ -257,6 +260,20 @@ export default class Handler extends SocketHandler {
         try {
             const options = Config.parseConfigArgs(args);
             const command = new Config(this.ctx, options);
+            this.handleTransaction(command.execute(), source);
+        } catch (e) {
+            this.ctx.connection.writeString(e.message);
+            return;
+        }
+    }
+
+    /**
+     * Executes the "keys" command.
+     */
+    private execKeys(args: RespBulkString[], source: Buffer) {
+        try {
+            const keysOptions = Keys.parseKeysOptions(args);
+            const command = new Keys(this.ctx, keysOptions);
             this.handleTransaction(command.execute(), source);
         } catch (e) {
             this.ctx.connection.writeString(e.message);

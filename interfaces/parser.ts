@@ -1,5 +1,5 @@
 export interface ParseSuccess<T> {
-    value: T; // the parsed value as a RespValue
+    value: T; // the parsed value
     source: Buffer; // the source that was parsed;
     ok: true;
 }
