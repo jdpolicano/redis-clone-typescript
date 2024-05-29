@@ -270,8 +270,10 @@ export default class RdbFileParser {
      */
     private parseEntryWithExpiryMS() {
         this.advance(1) // skip the opcode
-        console.log("encountered ms timestamp, need to handle these...setting without expiry for now.");
         const expiryTimestamp = this.readBigInt(8);
+        console.log(`Expiry timestamp: ${expiryTimestamp}`);
+        console.log(`Current Time: ${Date.now()}`);
+        console.log(`Diff: ${expiryTimestamp - BigInt(Date.now())}`);
         if (expiryTimestamp > BigInt(Date.now())) {
             const expiry = new Expiration(Number(expiryTimestamp - BigInt(Date.now())), "ms");
             return this.parseEntry(expiry);
