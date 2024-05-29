@@ -112,9 +112,7 @@ export default class RdbFileParser {
         this.parseMagicHeaders();
         // this is an optional header field.
         if (this.readStream[0] === OP_CODES.AUX) {
-            console.log("Parsing aux fields...");
             this.parseAuxFields();
-            console.log([...this.auxFields.entries()])
         }
 
         // this is the main loop that reads the rdb file and applies the changes to the database.
@@ -179,7 +177,7 @@ export default class RdbFileParser {
         this.advance(1); // skip the opcode
         const dbSize = this.getLength(this.readNextByte());
         const expiresSize = this.getLength(this.readNextByte());
-        console.log(`dbSize -> ${dbSize} and expireSize -> ${expiresSize}`);
+        console.log(`dbSize: ${dbSize} expireSize: ${expiresSize}`);
         return;
     }
 
@@ -237,10 +235,8 @@ export default class RdbFileParser {
     private parseEntry(expiry?: Expiration) {
         const valueType = this.readNextByte();
         const key = this.readStringEncoded();
-        console.log(key);
 ;        if (valueType === VALUE_ENCODING.STRING) {
             const value = this.readStringEncoded();
-            console.log(value);
             const asResp = RespBuilder.bulkString(value);
             this.db.setWithKey(key, asResp, expiry);
         } else {
