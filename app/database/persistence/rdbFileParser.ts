@@ -364,7 +364,9 @@ export default class RdbFileParser {
      */
     private readBigInt(n: number): bigint {
         const bytes = this.readExact(n);
+        const asBin = [...bytes].map(b => b.toString(2)).join("");
         console.log(bytes);
+        console.log(asBin);
         let result = BigInt(0);
         for (let i = 0; i < n; i++) {
             result = result << BigInt(8) | BigInt(bytes[i]);
