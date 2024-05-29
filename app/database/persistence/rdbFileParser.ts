@@ -364,6 +364,7 @@ export default class RdbFileParser {
      */
     private readBigInt(n: number): bigint {
         const bytes = this.readExact(n);
+        console.log(bytes);
         let result = BigInt(0);
         for (let i = 0; i < n; i++) {
             result = result << BigInt(8) | BigInt(bytes[i]);
@@ -403,12 +404,5 @@ export default class RdbFileParser {
             throw new Error("buffer too small");
         }
         this.readStream = this.readStream.subarray(n);
-    };
-
-    /**
-     * returns true if the next byte is an opcode.
-     */
-    private isNextOpcode(): boolean {
-        return Object.values(OP_CODES).includes(this.readStream[0]);
     };
 }
