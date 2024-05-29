@@ -375,6 +375,7 @@ export default class RdbFileParser {
         let result = BigInt(0);
         for (let i = 0; i < n; i++) {
             result = (result << BigInt(8)) | BigInt(bytes[i]);
+            console.log(result);
         }
         return result;
     }
