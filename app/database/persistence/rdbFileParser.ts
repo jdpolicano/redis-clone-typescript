@@ -369,7 +369,7 @@ export default class RdbFileParser {
         console.log(asBin);
         let result = BigInt(0);
         for (let i = 0; i < n; i++) {
-            result = result << BigInt(8) | BigInt(bytes[i]);
+            result = (result << BigInt(8)) | BigInt(bytes[i]);
         }
         return result;
     }
