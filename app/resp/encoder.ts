@@ -1,57 +1,57 @@
 import { RespValue, RespType } from "./types";
 
 export default class RespEncoder {
-    static encodeResp(payload: RespValue): string {
-        switch (payload.type) {
-            case RespType.SimpleString: {
-                return this.encodeSimpleString(payload.value);
-            }
-            
-            case RespType.SimpleError: {
-                return this.encodeSimpleError(payload.value);
-            }
-            
-            case RespType.Integer: {
-                return this.encodeInteger(payload.value);
-            }
-                
-            case RespType.BulkString: {
-                return this.encodeBulkString(payload.value);
-            }
-            
-            case RespType.Array: {
-                return this.encodeArray(payload.value);
-            }
+  static encodeResp(payload: RespValue): string {
+    switch (payload.type) {
+      case RespType.SimpleString: {
+        return this.encodeSimpleString(payload.value);
+      }
 
-            default:
-                throw new Error("Invalid message type");
-        }
-    }
+      case RespType.SimpleError: {
+        return this.encodeSimpleError(payload.value);
+      }
 
-    static encodeSimpleString(value: string): string {
-        return `+${value}\r\n`;
-    }
+      case RespType.Integer: {
+        return this.encodeInteger(payload.value);
+      }
 
-    static encodeSimpleError(value: string): string {
-        return `-${value}\r\n`;
-    }
+      case RespType.BulkString: {
+        return this.encodeBulkString(payload.value);
+      }
 
-    static encodeInteger(value: string): string {
-        return `:${value}\r\n`;
-    }
+      case RespType.Array: {
+        return this.encodeArray(payload.value);
+      }
 
-    static encodeBulkString(value: string | null): string {
-        if (value === null) {
-            return "$-1\r\n";
-        }  
-        return `$${value.length}\r\n${value}\r\n`;
+      default:
+        throw new Error("Invalid message type");
     }
+  }
 
-    static encodeArray(value: RespValue[] | null): string {
-        if (value === null) {
-            return "*-1\r\n";
-        }
-        const parts = value.map((v) => this.encodeResp(v));
-        return `*${parts.length}\r\n${parts.join("")}`;
+  static encodeSimpleString(value: string): string {
+    return `+${value}\r\n`;
+  }
+
+  static encodeSimpleError(value: string): string {
+    return `-${value}\r\n`;
+  }
+
+  static encodeInteger(value: string): string {
+    return `:${value}\r\n`;
+  }
+
+  static encodeBulkString(value: string | null): string {
+    if (value === null) {
+      return "$-1\r\n";
     }
+    return `$${value.length}\r\n${value}\r\n`;
+  }
+
+  static encodeArray(value: RespValue[] | null): string {
+    if (value === null) {
+      return "*-1\r\n";
+    }
+    const parts = value.map((v) => this.encodeResp(v));
+    return `*${parts.length}\r\n${parts.join("")}`;
+  }
 }

@@ -252,7 +252,6 @@ export default class RdbFileParser {
      * Parses an entry with an expiry time in seconds.
      */
     private parseEntryWithExpirySecs() {
-        console.log("Parsing entry with expiry time in seconds...");
         this.advance(1) // skip the opcode
         /**
          * This is a 4 byte unsigned int.
@@ -263,9 +262,6 @@ export default class RdbFileParser {
          * I believe javascript just converts it to a 4 byte integer and then performs the bitshifts...
          */
         const expiryTimestamp = this.readInt(4) * 1000; // convert the seconds to milliseconds.
-        console.log(`Expiry timestamp: ${expiryTimestamp}`);
-        console.log(`Current Time: ${Date.now()}`);
-        console.log(`Diff: ${expiryTimestamp - Date.now()}`);
         const expiry = new Expiration(expiryTimestamp - Date.now(), "ms");
         return this.parseEntry(expiry);
         
@@ -275,12 +271,8 @@ export default class RdbFileParser {
      * Parses an entry with an expiry time in milliseconds.
      */
     private parseEntryWithExpiryMS() {
-        console.log("Parsing entry with expiry time in milliseconds...");
         this.advance(1) // skip the opcode
         const expiryTimestamp = this.readBigInt(8);
-        console.log(`Expiry timestamp: ${expiryTimestamp}`);
-        console.log(`Current Time: ${Date.now()}`);
-        console.log(`Diff: ${expiryTimestamp - BigInt(Date.now())}`);
         const expiry = new Expiration(Number(expiryTimestamp - BigInt(Date.now())), "ms");
         return this.parseEntry(expiry);
     }

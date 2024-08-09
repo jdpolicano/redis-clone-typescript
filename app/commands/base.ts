@@ -1,4 +1,4 @@
-import type {RespValue } from "../resp/types";
+import type { RespValue } from "../resp/types";
 import type { RequestContext } from "../protocol/base";
 
 /**
@@ -6,40 +6,40 @@ import type { RequestContext } from "../protocol/base";
  * This can help the handler that execs the command to know what it should do next.
  */
 export enum Transaction {
-    Read, // db read
-    ReadFail, // attempt to read something that wasn't there.
-    Write, // db write
-    WriteFail, // attempt to write something but failed.
-    Info, // info
-    Ping, // ping
-    Other, // other
-    Internals, 
-    Replication, // replication
-    ReplicationFail // replication failed
+  Read, // db read
+  ReadFail, // attempt to read something that wasn't there.
+  Write, // db write
+  WriteFail, // attempt to write something but failed.
+  Info, // info
+  Ping, // ping
+  Other, // other
+  Internals,
+  Replication, // replication
+  ReplicationFail, // replication failed
 }
 
 export default abstract class Command {
-    protected ctx: RequestContext;
-    protected shouldReply: boolean = true;
+  protected ctx: RequestContext;
+  protected shouldReply: boolean = true;
 
-    constructor(ctx: RequestContext) {
-        this.ctx = ctx;
-    }
-    
-    abstract execute(message: RespValue): Transaction | Promise<Transaction>;
+  constructor(ctx: RequestContext) {
+    this.ctx = ctx;
+  }
 
-    public setReply(shouldReply: boolean) {
-        this.shouldReply = shouldReply;
-    }
+  abstract execute(message: RespValue): Transaction | Promise<Transaction>;
 
-    /**
-     * Passthrough method that allows the command to reply to the client.
-     * Only replies if the shouldReply flag is set to true.
-     * @param cb 
-     */
-    protected reply(cb: () => void) {
-        if (this.shouldReply) {
-            cb();
-        }
+  public setReply(shouldReply: boolean) {
+    this.shouldReply = shouldReply;
+  }
+
+  /**
+   * Passthrough method that allows the command to reply to the client.
+   * Only replies if the shouldReply flag is set to true.
+   * @param cb
+   */
+  protected reply(cb: () => void) {
+    if (this.shouldReply) {
+      cb();
     }
+  }
 }

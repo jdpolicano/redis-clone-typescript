@@ -1,23 +1,23 @@
 import Connection from "./connection";
 
 export default class Replica {
-    connection: Connection;
-    private lastKnownOffset: number;
+  connection: Connection;
+  private lastKnownOffset: number;
 
-    constructor(connection: Connection) {
-        this.connection = connection;
-        this.lastKnownOffset = -1; // -1 means we don't know the offset
-    }
-    
-    write(data: Buffer) {
-        this.connection.write(data);
-    }
+  constructor(connection: Connection) {
+    this.connection = connection;
+    this.lastKnownOffset = -1; // -1 means we don't know the offset
+  }
 
-    setLastKnownOffset(offset: number) {
-        this.lastKnownOffset = offset;
-    }
+  write(data: Buffer) {
+    this.connection.write(data);
+  }
 
-    getLastKnownOffset() {
-        return this.lastKnownOffset;
-    }
+  setLastKnownOffset(offset: number) {
+    this.lastKnownOffset = offset;
+  }
+
+  getLastKnownOffset() {
+    return this.lastKnownOffset;
+  }
 }
